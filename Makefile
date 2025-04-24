@@ -1,5 +1,5 @@
 # Configure your paper
-TEMPLATE_PATH				:= templates/feif
+TEMPLATE_PATH				:= templates/eg
 
 # Configure programs to use
 PDF_VIEWER 					:= evince
@@ -10,7 +10,7 @@ BIBLIOGRAPHY				:= common/bibliography.bib
 
 # Configure output files
 OUTPUT_DIR					:= build
-OUTPUT_FILE					:= Paper1024
+OUTPUT_FILE					:= SeminarPaper
 
 PACKAGE_DIR					:= $(OUTPUT_DIR)/package
 
