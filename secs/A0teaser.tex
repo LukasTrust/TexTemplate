@@ -1,10 +1,18 @@
-% \def\svgwidth{\textwidth}%
-% \includesvg{figs/compression}%
-% \centering
-% \caption[The teaser image.]{%
-% \textbf{(a)} Number 1,
-% \textbf{(b)} Number 2.
-% \textbf{(c)} Number 3.
-% \textbf{(d)} Number 4.
-% }
-% \label{fig:teaser}
+\definecolor{customgreen}{HTML}{82B366}
+\definecolor{customblue}{HTML}{6C8EBF}
+
+\def\svgwidth{\textwidth}%
+\includesvg{figs/diagram}%
+ \centering
+ \caption{Diagram caption}
+ \label{fig:teaser}
+% Add the legend below the diagram
+\begin{tikzpicture}[scale=0.8, yshift=-2cm]
+    % Green square for "Choose one"
+    \node[fill=customgreen, minimum size=10pt, anchor=west] (green) at (0, 0) {};
+    \node[anchor=west] at (0.3, 0) {Choose one};
+
+    % Blue square for "Need all paths"
+    \node[fill=customblue, minimum size=10pt, anchor=west] (blue) at (0, -0.6) {};
+    \node[anchor=west] at (0.3, -0.6) {Need all paths};
+  \end{tikzpicture}
