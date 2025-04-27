@@ -9,26 +9,22 @@ Recently, a new field of research has emerged that aims to use neural representa
 These methods offer an alternative to traditional mesh representations by encoding complex shapes in a compact and continuous format, which is more flexible than traditional meshes.
 By avoiding the rigid structure inherent in mesh-based approaches, neural representations enable smoother interpolations and differentiable processing, which can lead to more efficient and flexible methods for handling 3D data~\cite{Park2019}.
 Despite these advantages, one of the primary challenges remains: the conversion of these neural representations back into usable, topologically consistent meshes.
-This conversion process is computationally expensive, often lossy, and typically fails to recover the fine details that would make these methods truly viable for high-quality 3D applications~\cite{Sivaram2024}.
+This conversion process is computationally expensive, often lossy, and typically fails to recover the fine details that would make these methods truly viable for high-quality 3D applications~\cite{sivaram2024patchnets2024}.
 
 In response to these limitations, the concept of Neural Geometry Fields (NGFs) has been introduced as a potential solution.
 NGFs aim to combine the benefits of both neural networks and traditional meshes by creating a hybrid representation that has the advantage of the compactness of neural networks and the structural clarity of meshes.
 Instead of treating neural and mesh-based methods as separate or mutually exclusive, NGFs directly generate mesh geometry from neural features, thus bypassing many of the conversion challenges faced by implicit representations.
-This approach has the potential to revolutionize how 3D geometry is processed, offering both the flexibility and precision necessary for high-fidelity models while reducing the computational costs typically associated with traditional mesh-based techniques~\cite{Sivaram2024}.
+This approach has the potential to revolutionize how 3D geometry is processed, offering both the flexibility and precision necessary for high-fidelity models while reducing the computational costs typically associated with traditional mesh-based techniques~\cite{sivaram2024patchnets2024}.
 
 \subsection{Scope and Objectives}
-
-This paper focuses on explaining how NGFs work and, more importantly, how they differ from and improve upon standard methods in the domains of:
+In this paper, we focus on explaining how Neural Geometry Fields (NGFs) operate and, more importantly, how they differ from and improve upon standard methods in the domains of:
 \begin{itemize}
-    \item Mesh generation: transitioning from triangle-based surfaces and marching cubes to structured quad patches with learned displacements.
-    \item Compression: minimizing storage requirements while maintaining high fidelity, compared to traditional decimation techniques like QSlim or compression schemes such as Draco.
-    \item Surface reconstruction: refining coarse base meshes using neural displacement fields instead of relying solely on geometric simplification.
+    \item \textbf{Mesh generation:} transitioning from triangle-based surfaces and marching cubes to structured quad patches with learned displacements.
+    \item \textbf{Compression:} minimizing storage requirements while maintaining high fidelity, compared to traditional decimation techniques like QSlim or compression schemes such as Draco.
+    \item \textbf{Surface reconstruction:} refining coarse base meshes using neural displacement fields instead of relying solely on geometric simplification.
 \end{itemize}
-
-By systematically comparing NGFs to conventional approaches, this paper aims to highlight both their strengths, such as real-time applicability and improved detail preservation, and their current limitations, including reliance on patch-based surface structures and the computational cost of training.
-
-The main research question is the following:
-
+By systematically comparing NGFs to conventional approaches, we aim to highlight both their strengths—such as real-time applicability and improved detail preservation—and their current limitations, including their reliance on patch-based surface structures and the computational cost of training.
+The main research question we address is as follows:
 \begin{quote}
-How do Neural Geometry Fields improve upon traditional mesh compression and surface reconstruction methods, and what are their implications for real-time, high-fidelity 3D geometry processing?
+\emph{How do Neural Geometry Fields improve upon traditional mesh compression and surface reconstruction methods, and what are their implications for real-time, high-fidelity 3D geometry processing?}
 \end{quote}
