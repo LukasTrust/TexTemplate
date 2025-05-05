@@ -1,11 +1,12 @@
 \section{Neural Geometry Fields (NGFs)}\label{Sec:MainPart}
 
 The pipeline used by Neural Geometry Fields can be divided into three distinct stages. 
-
+% Im aktiven schreiben, also Sivarie and co-authers
 First, a base mesh $\Sigma$ is input and partitioned into quadrangular patches. 
 From this, a trainable feature field $\Psi : \Sigma \rightarrow \mathbb{R}^F$ is constructed, where each patch is associated with a set of features that describe its surface properties. 
 In the second stage, these features, along with the 3D positions of the mesh, are fed into a neural network to compute the displacement for each point on the mesh. 
 The displacements are then applied to the base mesh, resulting in a transformed conventional triangle mesh. 
+% What is F in this text?
 Finally, the feature field and patches are optimized using an inverse rendering algorithm. 
 
 In the following sections, each stage will be explored in greater detail, with an example provided to further clarify the process. 
@@ -22,7 +23,8 @@ This reduces the number of patches compared to a purely triangular mesh and simp
 \usetikzlibrary{calc, shapes.geometric, arrows.meta, decorations.pathreplacing}
 \begin{figure}[ht]
   \centering
-  \begin{tikzpicture}
+  \begin{adjustbox}{center}
+  \begin{tikzpicture}[scale=0.85]
 
     % === Triangle Mesh (Left) ===
     \begin{scope}
@@ -45,7 +47,7 @@ This reduces the number of patches compared to a purely triangular mesh and simp
     \end{scope}
 
     % === Merge Arrow ===
-    \draw[->, thick] (2.6,0.7) -- (5.0,0.7) node[midway, above] {merge};
+    \draw[->, thick] (2.6,0.7) -- (5.0,0.7) node[midway, above] {Merge};
 
     % === Quadrilateral Mesh (Middle) ===
     \begin{scope}[xshift=5.5cm]
@@ -66,7 +68,7 @@ This reduces the number of patches compared to a purely triangular mesh and simp
     \end{scope}
 
     % === Down Arrow to Unit Square ===
-    \draw[->, thick] (6.5,-0.8) -- (6.5,-1.6) node[midway, right] {parameterize};
+    \draw[->, thick] (6.5,-0.8) -- (6.5,-1.6) node[midway, right] {Parameterize};
 
     % === Unit Square ===
     \begin{scope}[xshift=5.5cm, yshift=-4.0cm]
@@ -75,11 +77,11 @@ This reduces the number of patches compared to a purely triangular mesh and simp
       \filldraw[black] (2,0) circle (1pt) node[anchor=north west] {\small $(1,0)$};
       \filldraw[black] (0,2) circle (1pt) node[anchor=south east] {\small $(0,1)$};
       \filldraw[black] (2,2) circle (1pt) node[anchor=south west] {\small $(1,1)$};
-      \node at (1,-0.7) {\small (c) Unit square $[0,1]^2$};
+      \node at (1,-0.7) {\small (c) Unit Square $[0,1]^2$};
     \end{scope}
 
     % === Left Arrow to Feature Field ===
-    \draw[->, thick] (5.0,-3) -- (2.6,-3) node[midway, above] {interpolate};
+    \draw[->, thick] (5.0,-3) -- (2.6,-3) node[midway, above] {Interpolate};
 
     % === Feature Field (Right) ===
     \begin{scope}[yshift=-4.0cm]
@@ -104,6 +106,7 @@ This reduces the number of patches compared to a purely triangular mesh and simp
     \end{scope}
     
   \end{tikzpicture}
+  \end{adjustbox}
   \caption{Surface processing pipeline: The irregular triangle mesh is simplified and merged into a quadrilateral mesh $\Sigma$. A quadrilateral patch is extracted, which is then parameterized over the unit square $[0,1]^2$. This parameterization facilitates both geometric and feature field interpolation, with feature values interpolated at the patch's corners and at an arbitrary point $\bm{u}$. Inspired by~\cite{sivaram2024}.}
   \label{fig:surface_processing_pipeline}
 \end{figure}
