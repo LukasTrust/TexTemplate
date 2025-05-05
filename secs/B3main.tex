@@ -19,11 +19,6 @@ In the following sections, each stage will be explored in greater detail, with a
 To represent a surface, the base mesh $\Sigma$ is partitioned into quadrilateral patches $\sigma$ by greedily merging adjacent triangles into near-rectangular quads (see Fig.~\ref{fig:surface_processing_pipeline}\,(a)--(b)). 
 This simplification step reduces topological complexity and removes non-manifold configurations, enabling a more compact and regular representation of the geometry. 
 This reduces the number of patches compared to a purely triangular mesh and simplifies the interpolation domain for further processing. 
-
-
-
-
-
 \usetikzlibrary{calc, shapes.geometric, arrows.meta, decorations.pathreplacing}
 \begin{figure}[ht]
   \centering
@@ -112,11 +107,6 @@ This reduces the number of patches compared to a purely triangular mesh and simp
   \caption{Surface processing pipeline: The irregular triangle mesh is simplified and merged into a quadrilateral mesh $\Sigma$. A quadrilateral patch is extracted, which is then parameterized over the unit square $[0,1]^2$. This parameterization facilitates both geometric and feature field interpolation, with feature values interpolated at the patch's corners and at an arbitrary point $\bm{u}$. Inspired by~\cite{sivaram2024}.}
   \label{fig:surface_processing_pipeline}
 \end{figure}
-
-
-
-
-
 Initially, the mesh is simplified using QSlim, a robust mesh simplification algorithm that preserves essential structures such as holes and intersections. 
 Following simplification, adjacent triangles are merged into quads to form a compact base mesh with fewer patches (minimizing $|Q|$) than a purely triangular representation. 
 This also simplifies the interpolation domain, facilitating subsequent processing.
