@@ -19,7 +19,7 @@ In the following sections, we explore each stage in greater detail and provide a
 
 Sivaram and colleagues introduce a method for surface representation by partitioning a simplified base mesh, denoted as $\Sigma$, into quadrilateral patches $\sigma$.
 To achieve this, they greedily merge adjacent triangles into near-rectangular quads.
-This process serves as a simplification step that reduces the meshs topological complexity, eliminates non-manifold configurations, and results in a more compact and regular representation of the surface geometry.
+This process serves as a simplification step that reduces the meshs topological complexity, eliminates non-manifold configurations and results in a more compact and regular representation of the surface geometry.
 By relying on quadrilateral patches rather than a purely triangular mesh, they decrease the overall number of patches and simplify the interpolation domain for later processing.
 \usetikzlibrary{calc, shapes.geometric, arrows.meta, decorations.pathreplacing}
 \begin{figure}[ht]
@@ -163,7 +163,7 @@ For any sample point $\mathbf{u} \in [0,1]^2$ within a patch $\sigma$, the final
 This equation applies a learned displacement, via the neural network $\text{MLP}_\theta$, to the base surface location $\sigma(\mathbf{u})$, based on both geometry and feature encoding. 
 The function $\text{MLP}_\theta$ refers to a multi-layer perceptron, a type of feedforward neural network consisting of several fully connected layers. 
 Each layer performs a linear transformation followed by a non-linear activation function (e.g., ReLU or GELU). 
-The architecture typically includes an input layer (matching the dimension of the encoded vector), one or more hidden layers, and an output layer that produces a 3D displacement vector. 
+The architecture typically includes an input layer (matching the dimension of the encoded vector), one or more hidden layers and an output layer that produces a 3D displacement vector. 
 The MLP is responsible for learning how to transform the combined positional and feature information into a displacement vector that deforms the base surface towards the target shape. 
 The parameters $\theta$ include all trainable weights and biases of the MLP. 
 These parameters are optimized during training using gradient-based methods (e.g., stochastic gradient descent or Adam) to minimize a loss function measuring the discrepancy between the predicted surface and the ground truth. 
@@ -181,7 +181,7 @@ The resolution $k$ controls the level of surface detail: higher values yield den
 
 For each sampled point $\mathbf{u}$, the method computes: 
 \begin{itemize}
-  \item The corresponding base position $\sigma(\mathbf{u})$, which maps $\mathbf{u}$ to a 3D point on the undeformed base surface, and 
+  \item The corresponding base position $\sigma(\mathbf{u})$, which maps $\mathbf{u}$ to a 3D point on the undeformed base surface and 
   \item The associated interpolated feature vector $\Psi(\mathbf{u})$, which encodes semantic or learned geometric information at that location.
 \end{itemize}
 
@@ -190,7 +190,7 @@ Together, these values serve as the inputs to the positional encoding and deform
 
 \subsubsection{Applying Neural Displacements}
 
-Next, the combined positional and feature inputs are passed through the encoding function (as defined earlier), and the result is fed into the learned multi-layer perceptron (MLP$_\theta$). 
+Next, the combined positional and feature inputs are passed through the encoding function (as defined earlier) and the result is fed into the learned multi-layer perceptron (MLP$_\theta$). 
 This network outputs a 3D displacement vector for each sampled point. 
 The final vertex position on the output surface is then computed using Equation (4), transforming each point from the base mesh into its deformed position on the refined surface and capturing both coarse shape and fine geometric detail. 
 
@@ -263,7 +263,7 @@ The $k \times k$ grid of vertices is triangulated using a regular pattern, simil
 Typically, this involves connecting each $2 \times 2$ block of adjacent vertices into two triangles. 
 
 Since each patch is handled independently, this process creates a structured local mesh per patch. 
-When all patches are assembled, their boundaries align due to the consistent sampling grid, and the result is a semi-regular global mesh. 
+When all patches are assembled, their boundaries align due to the consistent sampling grid and the result is a semi-regular global mesh. 
 This structure strikes a balance between the flexibility of unstructured meshes and the computational efficiency of regular grids, enabling both detailed surface modeling and efficient downstream processing (e.g., rendering or optimization). 
 
 %\begin{figure}[ht]
