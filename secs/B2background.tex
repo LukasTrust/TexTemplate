@@ -2,46 +2,46 @@
 The domain of 3D geometry representation has undergone substantial evolution, driven by the ongoing need to balance precision, computational efficiency and representational flexibility.
 In the following, we review the principal categories of related work that establish the foundation for Neural Geometry Fields (NGFs), encompassing conventional mesh-based techniques, neural implicit representations and recent hybrid approaches.
 
-\subsection{Conventional Mesh-Based Techniques}
-Meshes have historically constituted the main format for representing 3D geometries within computer graphics.
-Their discrete, vertex-based structure enables explicit control over topology and surface detail.
-However, the dense nature of mesh data often incurs significant memory consumption and computational overhead.
+%\subsection{Conventional Mesh-Based Techniques}
+%Meshes have historically constituted the main format for representing 3D geometries within computer graphics.
+%Their discrete, vertex-based structure enables explicit control over topology and surface detail.
+%However, the dense nature of mesh data often incurs significant memory consumption and computational overhead.
 
-To mitigate these limitations, a range of mesh simplification and compression methods have been introduced.
-An important tool in this area is QSlim~\cite{garland1997}, which utilizes quadric error metrics to systematically reduce mesh complexity while striving to preserve essential geometric features.
-In the field of data compression, techniques such as Draco~\cite{sajnani2020} exploit spatial coherence and vertex connectivity to achieve substantial reductions in storage requirements, particularly targeting web-based scenarios.
-Nevertheless, these approaches typically entail a trade-off between geometric detail and compactness, a compromise that becomes especially important in high-resolution or dynamically changing datasets.
+%To mitigate these limitations, a range of mesh simplification and compression methods have been introduced.
+%An important tool in this area is QSlim~\cite{garland1997}, which utilizes quadric error metrics to systematically reduce mesh complexity while striving to preserve essential geometric features.
+%In the field of data compression, techniques such as Draco~\cite{sajnani2020} exploit spatial coherence and vertex connectivity to achieve substantial reductions in storage requirements, particularly targeting web-based scenarios.
+%Nevertheless, these approaches typically entail a trade-off between geometric detail and compactness, a compromise that becomes especially important in high-resolution or dynamically changing datasets.
 
-In addition, surface reconstruction methods, such as Poisson Surface Reconstruction~\cite{kazhdan2006} and the Ball-Pivoting Algorithm~\cite{bernardini1999}, have been widely employed to recover continuous surfaces from unstructured point clouds.
-While effective under controlled conditions, these algorithms are often sensitive to input noise, require meticulous parameter tuning and inherently produce triangle meshes with fixed topological properties, limiting their adaptability to complex or highly detailed shapes.
+%In addition, surface reconstruction methods, such as Poisson Surface Reconstruction~\cite{kazhdan2006} and the Ball-Pivoting Algorithm~\cite{bernardini1999}, have been widely employed to recover continuous surfaces from unstructured point clouds.
+%While effective under controlled conditions, these algorithms are often sensitive to input noise, require meticulous parameter tuning and inherently produce triangle meshes with fixed topological properties, limiting their adaptability to complex or highly detailed shapes.
 
-\subsection{Neural Implicit Representations}
-Recent advances in deep learning have led to the development of neural implicit representations, offering an alternative paradigm to conventional discrete models.
-Rather than explicitly storing mesh connectivity or surface elements, these approaches encode 3D geometry as continuous functions, typically signed distance fields (SDFs) or occupancy probability fields, which are parameterized by neural networks.
+%\subsection{Neural Implicit Representations}
+%Recent advances in deep learning have led to the development of neural implicit representations, offering an alternative paradigm to conventional discrete models.
+%Rather than explicitly storing mesh connectivity or surface elements, these approaches encode 3D geometry as continuous functions, typically signed distance fields (SDFs) or occupancy probability fields, which are parameterized by neural networks.
 
-A pioneering contribution to neural implicit representations is DeepSDF~\cite{Park2019}.
-DeepSDF introduces the concept of learning a continuous shape space, where each distinct 3D object is associated with a compact latent vector.
-This latent vector, when passed through a neural network decoder, defines a signed distance function (SDF)—a continuous function that maps any point in 3D space to a scalar value representing the shortest distance to the object's surface, with the sign indicating whether the point lies inside or outside the surface boundary.
-By optimizing both the latent codes and the shared network parameters jointly, DeepSDF achieves efficient representation of complex geometric structures while maintaining compactness.
-This formulation allows smooth interpolation between shapes in the learned latent space and facilitates high-fidelity surface reconstruction through iso-surface extraction.
+%A pioneering contribution to neural implicit representations is DeepSDF~\cite{Park2019}.
+%DeepSDF introduces the concept of learning a continuous shape space, where each distinct 3D object is associated with a compact latent vector.
+%This latent vector, when passed through a neural network decoder, defines a signed distance function (SDF)—a continuous function that maps any point in 3D space to a scalar value representing the shortest distance to the object's surface, with the sign indicating whether the point lies inside or outside the surface boundary.
+%By optimizing both the latent codes and the shared network parameters jointly, DeepSDF achieves efficient representation of complex geometric structures while maintaining compactness.
+%This formulation allows smooth interpolation between shapes in the learned latent space and facilitates high-fidelity surface reconstruction through iso-surface extraction.
 
-In parallel, Occupancy Networks~\cite{mescheder2019} propose a related but distinct approach.
-Rather than predicting signed distances, Occupancy Networks model the occupancy probability of each point in 3D space—the likelihood that a given point resides inside the object's volume.
-This occupancy function is parameterized by a multilayer perceptron (MLP), a type of fully connected neural network that maps 3D coordinates (and optionally conditional information, such as a latent code) directly to scalar occupancy values between 0 and 1.
-This continuous probabilistic formulation enables the generation of smooth, high-resolution surfaces without committing to a fixed spatial discretization such as voxels.
+%In parallel, Occupancy Networks~\cite{mescheder2019} propose a related but distinct approach.
+%Rather than predicting signed distances, Occupancy Networks model the occupancy probability of each point in 3D space—the likelihood that a given point resides inside the object's volume.
+%This occupancy function is parameterized by a multilayer perceptron (MLP), a type of fully connected neural network that maps 3D coordinates (and optionally conditional information, such as a latent code) directly to scalar occupancy values between 0 and 1.
+%This continuous probabilistic formulation enables the generation of smooth, high-resolution surfaces without committing to a fixed spatial discretization such as voxels.
 
-These implicit methods offer several significant advantages.
-Their continuity and resolution-independence make them particularly well-suited for tasks such as shape interpolation, morphing and differentiable rendering.
-However, as the geometric information is inherently implicit, explicit surface representations must typically be extracted through iso-surface extraction algorithms such as Marching Cubes~\cite{lorensen1987}.
-This post-processing introduces discretization artifacts, impacts real-time performance and often struggles to faithfully capture fine-grained structural details or guarantee topological consistency~\cite{sitzmann2020}.
+%These implicit methods offer several significant advantages.
+%Their continuity and resolution-independence make them particularly well-suited for tasks such as shape interpolation, morphing and differentiable rendering.
+%However, as the geometric information is inherently implicit, explicit surface representations must typically be extracted through iso-surface extraction algorithms such as Marching Cubes~\cite{lorensen1987}.
+%This post-processing introduces discretization artifacts, impacts real-time performance and often struggles to faithfully capture fine-grained structural details or guarantee topological consistency~\cite{sitzmann2020}.
 
-\subsection{Hybrid Approaches and Emerging Techniques}
-Recognizing the strengths and limitations of explicit and implicit representations has led to recent research efforts that increasingly focus on hybrid approaches that integrate neural modeling with structured surface representations.
+%\subsection{Hybrid Approaches and Emerging Techniques}
+%Recognizing the strengths and limitations of explicit and implicit representations has led to recent research efforts that increasingly focus on hybrid approaches that integrate neural modeling with structured surface representations.
 
-For instance, Neural Subdivision Surfaces~\cite{liu2020} and AtlasNet~\cite{groueix2018} reconstruct 3D geometry using collections of learnable patches or parametric mappings, offering enhanced control over both local surface details and global topology.
-Building on these ideas, patch-based methods such as PatchNets~\cite{sivaram2024} have been proposed, wherein structured surface primitives, such as quadrilateral patches, are directly predicted from latent neural features.
-Such approaches aim to alleviate the inefficiencies associated with iso-surface extraction and to produce structured, differentiable representations more directly.
+%For instance, Neural Subdivision Surfaces~\cite{liu2020} and AtlasNet~\cite{groueix2018} reconstruct 3D geometry using collections of learnable patches or parametric mappings, offering enhanced control over both local surface details and global topology.
+%Building on these ideas, patch-based methods such as PatchNets~\cite{sivaram2024} have been proposed, wherein structured surface primitives, such as quadrilateral patches, are directly predicted from latent neural features.
+%Such approaches aim to alleviate the inefficiencies associated with iso-surface extraction and to produce structured, differentiable representations more directly.
 
-Neural Geometry Fields extend these ideas by embedding the surface reconstruction process directly into the forward pass of the neural network.
-Rather than relying on post-hoc mesh extraction, NGFs generate explicit mesh elements as an intrinsic part of inference.
-This enables higher geometric fidelity, better structural consistency and improved integration with downstream tasks such as compression, simulation and interactive editing.
+%Neural Geometry Fields extend these ideas by embedding the surface reconstruction process directly into the forward pass of the neural network.
+%Rather than relying on post-hoc mesh extraction, NGFs generate explicit mesh elements as an intrinsic part of inference.
+%This enables higher geometric fidelity, better structural consistency and improved integration with downstream tasks such as compression, simulation and interactive editing.

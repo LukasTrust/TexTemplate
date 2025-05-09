@@ -17,10 +17,10 @@ In the following sections, we explore each stage in greater detail and provide a
 
 \subsection{Surface Partitioning into Patches}
 
-Sivaram and colleagues introduce a method for surface representation by partitioning a simplified base mesh, denoted as \( \Sigma \), into quadrilateral patches \( \sigma \). 
-To achieve this, they greedily merge adjacent triangles into near-rectangular quads. 
-This process serves as a simplification step that reduces the mesh’s topological complexity, eliminates non-manifold configurations, and results in a more compact and regular representation of the surface geometry. 
-By relying on quadrilateral patches rather than a purely triangular mesh, they decrease the overall number of patches and simplify the interpolation domain for later processing. 
+Sivaram and colleagues introduce a method for surface representation by partitioning a simplified base mesh, denoted as $\Sigma$, into quadrilateral patches $\sigma$.
+To achieve this, they greedily merge adjacent triangles into near-rectangular quads.
+This process serves as a simplification step that reduces the meshs topological complexity, eliminates non-manifold configurations, and results in a more compact and regular representation of the surface geometry.
+By relying on quadrilateral patches rather than a purely triangular mesh, they decrease the overall number of patches and simplify the interpolation domain for later processing.
 \usetikzlibrary{calc, shapes.geometric, arrows.meta, decorations.pathreplacing}
 \begin{figure}[ht]
   \centering
@@ -71,7 +71,7 @@ By relying on quadrilateral patches rather than a purely triangular mesh, they d
     % === Down Arrow to Unit Square ===
     \draw[->, thick] (6.5,-0.8) -- (6.5,-1.6) node[midway, right] {Parameterize};
 
-    % === Unit Square ===
+    % === Unit Square (Right) ===
     \begin{scope}[xshift=5.5cm, yshift=-4.0cm]
       \draw[blue, thick] (0,0) rectangle (2,2);
       \filldraw[black] (0,0) circle (1pt) node[anchor=north east] {\small $(0,0)$};
@@ -84,7 +84,7 @@ By relying on quadrilateral patches rather than a purely triangular mesh, they d
     % === Left Arrow to Feature Field ===
     \draw[->, thick] (5.0,-3) -- (2.6,-3) node[midway, above] {Interpolate};
 
-    % === Feature Field (Right) ===
+    % === Feature Field (Left) ===
     \begin{scope}[yshift=-4.0cm]
       \draw[blue, thick] (0,0) rectangle (2,2);
 
@@ -111,70 +111,198 @@ By relying on quadrilateral patches rather than a purely triangular mesh, they d
   \caption{Surface processing pipeline: The irregular triangle mesh is simplified and merged into a quadrilateral mesh $\Sigma$. A quadrilateral patch is extracted, which is then parameterized over the unit square $[0,1]^2$. This parameterization facilitates both geometric and feature field interpolation, with feature values interpolated at the patch's corners and at an arbitrary point $\bm{u}$. Inspired by~\cite{sivaram2024}.}
   \label{fig:surface_processing_pipeline}
 \end{figure}
-The initial mesh is simplified using QSlim, a robust simplification algorithm that preserves critical structures such as holes and intersections. 
-After simplification, adjacent triangles are merged to form quadrilateral patches, producing a base mesh with a reduced patch count \( |Q| \) compared to a fully triangulated representation. 
-This reduction compresses the mesh but also provides the base for an efficient and structured interpolation. 
-Each patch \( \sigma \) is required to be diffeomorphic to the unit square \( [0,1]^2 \); that is, there must exist a smooth, bijective mapping with a smooth inverse between the patch and the square. 
-This constraint ensures that interpolation across the patch is well-defined and invertible. 
+The initial mesh is simplified using QSlim \cite{garland1997}, a robust simplification algorithm that preserves critical structures such as holes and intersections.
+After simplification, adjacent triangles are merged to form quadrilateral patches, producing a base mesh with a reduced patch count $|\mathcal{Q}|$ compared to a fully triangulated representation.
+This reduction compresses the mesh but also provides the base for an efficient and structured interpolation.
+Each patch $\sigma$ is required to be diffeomorphic to the unit square $[0,1]^2$; that is, there must exist a smooth, bijective mapping with a smooth inverse between the patch and the square.
+This constraint ensures that interpolation across the patch is well-defined and invertible.
 The four corner vertices of each patch are mapped as follows: 
-\[\begin{array}{c}
-(0,0) \to v_{1,00}, 
-(1,0) \to v_{1,10}, 
-(0,1) \to v_{1,01}, 
-(1,1) \to v_{1,11}.
-\end{array}\]
-To map an arbitrary point \( u = (u_x, u_y) \) within the unit square to its corresponding location on the surface patch \( \sigma \), bilinear interpolation is applied: 
-\[\sigma(u) = (1 - u_y)((1 - u_x)v_{00} + u_x v_{10}) + u_y((1 - u_x)v_{01} + u_x v_{11}).\]
-This two-stage interpolation first computes intermediate values along one axis (e.g., horizontal), then interpolates along the other axis (e.g., vertical). 
-The result is a smooth and continuous surface across each quadrilateral patch. 
-In this context, interpolation refers to estimating values at points within a patch based on the known values at its four corners. 
-Bilinear interpolation smoothly blends these corner values to compute both positions and other properties (such as feature vectors) for any point inside the patch. 
-This approach offers a simple and efficient way to represent complex surfaces using only a few key points. 
-Beyond geometry, Sivaram et al. also interpolate scalar or vector-valued feature fields defined at the patch corners. 
-Given feature values \( f_{00}, f_{10}, f_{01}, \) and \( f_{11} \), the interpolated feature value \( \Psi(u) \) at point \( u \) is calculated as: 
 
-\[\Psi(u) = (1 - u_y)((1 - u_x)f_{00} + u_x f_{10}) + u_y((1 - u_x)f_{01} + u_x f_{11}).\]
-This interpolation ensures that feature values vary smoothly across the surface, which is essential for effective learning in subsequent tasks. 
-Features are represented as learnable, high-dimensional vectors attached to the corners of each quadrilateral patch. 
-These feature vectors act as local descriptors, encoding important surface properties and guiding the neural network during the deformation process. 
-The feature field \( \Psi \) assigns a vector in \( \mathbb{R}^F \) (where \( F \) is typically 32 or 64) to each point on the surface, interpolated from the patch corners. 
-These features are optimized alongside the network parameters during training to accurately reconstruct the target surface geometry. 
-The complete set of mesh vertices and their associated features is defined as: 
-\[V = \bigcup_{\sigma} \{ v_{00}, v_{10}, v_{01}, v_{11} \}\]
-\[F = \bigcup_{\sigma} \{ f_{00}, f_{10}, f_{01}, f_{11} \}.\]
-Together, \( V \) and \( F \) describe the base geometry and the spatial distribution of features across the surface. 
-Sivaram and colleagues feed this quadrilateral mesh and its associated features into a neural network, \( MLP_\theta \), which learns to refine the geometry while preserving the simplified base’s topology and structural properties.
+\((0,0)\rightarrow v_{00}, \quad (1,0)\rightarrow v_{10}, \quad (0,1)\rightarrow v_{01}, \quad (1,1)\rightarrow v_{11}\).
+
+To map an arbitrary point $u = (u_x, u_y)$ within the unit square to its corresponding location on the surface patch $\sigma$, bilinear interpolation is applied:
+\[\sigma(u) = (1 - u_y)\left[(1 - u_x)v_{00} + u_x v_{10}\right] + u_y\left[(1 - u_x)v_{01} + u_x v_{11}\right]. \tag{1}\]
+This two-stage interpolation first computes intermediate values along one axis (e.g., horizontal), then interpolates along the other axis (e.g., vertical).
+The result is a smooth and continuous surface across each quadrilateral patch.
+In this context, interpolation refers to estimating values at points within a patch based on the known values at its four corners.
+Bilinear interpolation smoothly blends these corner values to compute both positions and other properties (such as feature vectors) for any point inside the patch.
+This approach offers a simple and efficient way to represent complex surfaces using only a few key points.
+Beyond geometry, Sivaram et al.\ also interpolate scalar or vector-valued feature fields defined at the patch corners.
+Given feature values $f_{00}, f_{10}, f_{01}, f_{11}$, the interpolated feature value $\Psi(u)$ at point $u$ is calculated as:
+\[\Psi(u) = (1 - u_y)\left[(1 - u_x)f_{00} + u_x f_{10}\right] + u_y\left[(1 - u_x)f_{01} + u_x f_{11}\right]. \tag{2}\]
+This interpolation ensures that feature values vary smoothly across the surface, which is essential for effective learning in subsequent tasks.
+Features are represented as learnable, high-dimensional vectors attached to the corners of each quadrilateral patch.
+These feature vectors act as local descriptors, encoding important surface properties and guiding the neural network during the deformation process.
+The feature field $\Psi$ assigns a vector in $\mathbb{R}^F$ (where $F$ is typically 32 or 64) to each point on the surface, interpolated from the patch corners.
+These features are optimized alongside the network parameters during training to accurately reconstruct the target surface geometry.
+The complete set of mesh vertices and their associated features is defined as:
+\[V = \bigcup_{\sigma} \{v_{00}, v_{10}, v_{01}, v_{11}\}
+\quad
+F = \bigcup_{\sigma} \{f_{00}, f_{10}, f_{01}, f_{11}\}.\]
+Together, $V$ and $F$ describe the base geometry and the spatial distribution of features across the surface.
+Sivaram and colleagues feed this quadrilateral mesh and its associated features into a neural network, $\text{MLP}_\theta$, which learns to refine the geometry while preserving the simplified base’s topology and structural properties.
 
 
 
 
 
-%A regular formula
+\subsection{Mesh Extraction from Neural Geometry Fields}
 
-%\begin{equation}
-%    x^2 + y^2 = z^2 
-%\end{equation}
-%and another one
-%\begin{equation}
-%    \left\Vert \vec{x} \right\Vert = \sqrt{\sum_{i=0}^{n}{x_i^2 + y_i^2}}.
-%\end{equation}
+Building upon this structured base mesh and the interpolated feature field, Sivaram and colleagues describe a method for extracting a refined surface representation suitable for inverse rendering and further optimization. 
+This process involves sampling a mesh from the neural geometry field by displacing the bilinearly interpolated points on each patch using a learned neural deformation. 
+To achieve this, each point on the base surface is augmented with feature information and passed through a positional encoding function, defined as: 
+\[\text{enc}(\mathbf{v}, \mathbf{f}) = (\sin(2^0 \mathbf{v}), \cos(2^0 \mathbf{v}), \ldots, \sin(2^L \mathbf{v}), \cos(2^L \mathbf{v}), \mathbf{f}). \tag{3}\] 
+This function encodes the spatial position $\mathbf{v}$ and its associated feature vector $\mathbf{f}$, which are obtained through bilinear interpolation as described in the previous section. 
+The use of sine and cosine functions at increasing frequencies allows the network to capture high-frequency geometric variations that plain coordinates cannot represent effectively. 
+This is particularly useful for learning fine-grained deformations or details that arise during surface reconstruction. 
+The parameter $L$ is a hyperparameter that controls the number of frequency bands used in the encoding. 
+It determines how many sine and cosine components are included; higher values of $L$ enable the encoding of finer spatial details, at the cost of higher-dimensional input. 
+By concatenating the interpolated feature vector $\mathbf{f}$ to this high-frequency encoding of $\mathbf{v}$, the model receives both spatial and semantic information in a unified representation, which is crucial for accurately learning complex deformations across the mesh \cite{Mildenhall2020}. 
+For any sample point $\mathbf{u} \in [0,1]^2$ within a patch $\sigma$, the final displaced coordinate on the output surface $\Lambda$ is computed as:\[
+\Lambda(\mathbf{u}) = \sigma(\mathbf{u}) + \text{MLP}_\theta \circ \text{enc}(\sigma(\mathbf{u}), \Psi(\mathbf{u})). \tag{4}\] 
+This equation applies a learned displacement, via the neural network $\text{MLP}_\theta$, to the base surface location $\sigma(\mathbf{u})$, based on both geometry and feature encoding. 
+The function $\text{MLP}_\theta$ refers to a multi-layer perceptron, a type of feedforward neural network consisting of several fully connected layers. 
+Each layer performs a linear transformation followed by a non-linear activation function (e.g., ReLU or GELU). 
+The architecture typically includes an input layer (matching the dimension of the encoded vector), one or more hidden layers, and an output layer that produces a 3D displacement vector. 
+The MLP is responsible for learning how to transform the combined positional and feature information into a displacement vector that deforms the base surface towards the target shape. 
+The parameters $\theta$ include all trainable weights and biases of the MLP. 
+These parameters are optimized during training using gradient-based methods (e.g., stochastic gradient descent or Adam) to minimize a loss function measuring the discrepancy between the predicted surface and the ground truth. 
+Through this process, the MLP learns complex deformation patterns that are conditioned on both spatial position and semantic surface features. 
+To extract a mesh from this continuous representation, Sivaram and colleagues employ a four-step procedure: 
 
-%Here is something with matrices:
-%\begin{equation}
-%\bf{A}=
-%\begin{bmatrix}
-%    a & b & c\\
-%    d & e & f\\
-%\end{bmatrix}^\top.
-%\end{equation}
+\subsubsection{Sampling the Patch Domain}
 
-%An some inline stuff $\sum a_i=\bf{B}$.
+Each surface patch is discretized by sampling points $\mathbf{u}$ on a uniform grid with resolution $k \times k$, producing $k^2$ samples per patch. 
+These grid points span the domain $[0,1]^2$, which parameterizes the patch. 
+The choice of a regular grid simplifies the process of mesh construction by ensuring consistent vertex spacing and predictable connectivity patterns. 
+The resolution $k$ controls the level of surface detail: higher values yield denser meshes capable of capturing finer geometric features. 
 
-%\begin{table}
-%    \caption[List of Symbols]{Keep a list of symbols in your paper.}
-%    \label{tab:ListOfSymbols}
-%    \resizebox{\columnwidth}{!}
-%    {
-%    \input{tabs/ListOfSymbols.tex}
-%    }
-%\end{table}
+\subsubsection{Computing Base Vertices and Features}
+
+For each sampled point $\mathbf{u}$, the method computes: 
+\begin{itemize}
+  \item The corresponding base position $\sigma(\mathbf{u})$, which maps $\mathbf{u}$ to a 3D point on the undeformed base surface, and 
+  \item The associated interpolated feature vector $\Psi(\mathbf{u})$, which encodes semantic or learned geometric information at that location.
+\end{itemize}
+
+These computations follow the mappings previously defined in Equations (1) and (2). 
+Together, these values serve as the inputs to the positional encoding and deformation steps. 
+
+\subsubsection{Applying Neural Displacements}
+
+Next, the combined positional and feature inputs are passed through the encoding function (as defined earlier), and the result is fed into the learned multi-layer perceptron (MLP$_\theta$). 
+This network outputs a 3D displacement vector for each sampled point. 
+The final vertex position on the output surface is then computed using Equation (4), transforming each point from the base mesh into its deformed position on the refined surface and capturing both coarse shape and fine geometric detail. 
+
+
+
+
+
+\begin{figure}[ht]
+  \centering
+  \begin{adjustbox}{center}
+  \begin{tikzpicture}[scale=0.9]
+
+    % Sample point u_i
+    \node[draw, circle, fill=red!30, minimum size=0.8cm] (u) at (0,0) {\small $\mathbf{u}_i$};
+    \node at (0,0.9) {\small Parametric Point};
+
+    % Psi(u)
+    \node[draw, rectangle, fill=green!20, minimum width=2.2cm] (psi) at (3.5,0.8) {\small $\Psi(\mathbf{u}_i)$};
+    \node at (3.5,1.4) {\small Feature Vector};
+
+    % Sigma(u)
+    \node[draw, rectangle, fill=blue!20, minimum width=2.2cm] (sigma) at (3.5,-0.8) {\small $\sigma(\mathbf{u}_i)$};
+    \node at (3.5,-0.2) {\small Base Surface Position};
+
+    % Encoding node
+    \node[draw, rectangle, fill=orange!30, minimum width=3cm] (enc) at (7,0) {\small $\text{enc}(\sigma(\mathbf{u}_i), \Psi(\mathbf{u}_i))$};
+    \node at (7,0.8) {\small Positional Encoding};
+
+    % MLP node
+    \node[draw, rectangle, fill=yellow!40, minimum width=2.6cm] (mlp) at (7,-2.5) {\small $\text{MLP}_\theta$};
+    \node at (7,-3.3) {\small Multi-Layer Perceptron};
+
+    % Displacement vector
+    \node[draw, circle, fill=purple!30, minimum size=0.8cm] (dx) at (3.5,-2.5) {\small $\Delta \mathbf{x}_i$};
+    \node at (3.5,-3.3) {\small Predicted Offset};
+
+    % Plus node for summing sigma(ui) and delta_x (smaller + symbol)
+    \node[draw, circle, fill=gray!30, minimum size=0.6cm] (plus) at (1.75,-2.5) {\large $+$};
+
+    % Final position
+    \node[draw, circle, fill=blue!50, text=white, minimum size=0.8cm] (x) at (0,-2.5) {\small $\mathbf{x}_i$};
+    \node at (0,-3.3) {\small Deformed Position};
+
+    % Arrows
+    \draw[->] (u) -- (psi) node[midway, above] {\tiny $\Psi$};
+    \draw[->] (u) -- (sigma) node[midway, below] {\tiny $\sigma$};
+    \draw[->] (sigma) -- (enc);
+    \draw[->] (psi) -- (enc);
+    \draw[->] (enc) -- (mlp);
+    \draw[->] (mlp) -- (dx);
+    \draw[->] (sigma) -- (plus);
+    \draw[->] (dx) -- (plus);
+    \draw[->] (plus) -- (x);
+
+  \end{tikzpicture}
+  \end{adjustbox}
+  \caption{Neural displacement pipeline for a sampled point $\mathbf{u}_i$. The point is mapped to a corresponding feature vector $\Psi(\mathbf{u}_i)$ and a base surface position $\sigma(\mathbf{u}_i)$. These inputs are passed through a positional encoding and a learned MLP to produce a displacement vector $\Delta \mathbf{x}_i$. The final deformed position $\mathbf{x}_i$ is obtained by adding the base position and the predicted offset, shown by the plus symbol.}
+  \label{fig:neural_displacement}
+\end{figure}
+
+
+
+
+
+
+\subsubsection{Constructing Connectivity}
+
+Once all displaced vertex positions for a patch are computed, the method constructs mesh connectivity locally for each patch. 
+The $k \times k$ grid of vertices is triangulated using a regular pattern, similar to the way elevation data is converted into triangles in height-field rendering. 
+Typically, this involves connecting each $2 \times 2$ block of adjacent vertices into two triangles. 
+
+Since each patch is handled independently, this process creates a structured local mesh per patch. 
+When all patches are assembled, their boundaries align due to the consistent sampling grid, and the result is a semi-regular global mesh. 
+This structure strikes a balance between the flexibility of unstructured meshes and the computational efficiency of regular grids, enabling both detailed surface modeling and efficient downstream processing (e.g., rendering or optimization). 
+
+%\begin{figure}[ht]
+%\centering
+%\begin{adjustbox}{center}
+%\begin{tikzpicture}[scale=1.5, every node/.style={font=\small}]
+% Shifted displaced coordinates (output of MLP)
+%\coordinate (v1') at (1.4,0.1);
+%\coordinate (v2') at (2.4,0.3);
+%\coordinate (v3') at (2.2,1.1);
+%\coordinate (v4') at (1.4,1.1);
+%\coordinate (v5') at (3.0,0.7);
+%\coordinate (v6') at (2.7,1.4);
+%\coordinate (v7') at (3.6,0.4);
+%\coordinate (v8') at (3.8,1.3);
+
+% Draw displaced points with specific label placements
+%\foreach \i/\pos in {1/below, 2/below, 3/above, 4/above, 5/below, 6/above, 7/below, 8/above} {
+%  \fill[gray] (v\i') circle (1pt);
+%  \node[\pos=2pt] at (v\i') {$\bm{v_\i'}$};
+%}
+
+% Triangulated mesh connections (manual, like in example)
+%\draw[gray, dashed] (v1') -- (v2') -- (v3') -- cycle;
+%\draw[gray, dashed] (v1') -- (v3') -- (v4') -- cycle;
+
+%\draw[gray, dashed] (v2') -- (v5') -- (v3') -- cycle;
+%\draw[gray, dashed] (v3') -- (v5') -- (v6') -- cycle;
+
+%\draw[gray, dashed] (v5') -- (v7') -- (v6') -- cycle;
+%\draw[gray, dashed] (v6') -- (v7') -- (v8') -- cycle;
+% MLP block (left)
+%\node[draw, minimum width=1cm, minimum height=1.8cm, align=center] (mlp) at (0,0.9) {MLP};
+
+% Straight arrow from MLP to right (input to mesh)
+%\draw[->, thick] (mlp.east) -- ++(1.0, 0);
+
+%\end{tikzpicture}
+%\end{adjustbox}
+%\caption{Illustration of neural displacements. The MLP transforms input features into displaced mesh points $\bm{v_i'}$. The dashed gray lines indicate the local mesh structure.}
+%\label{fig:neural_displacement}
+%\end{figure}
