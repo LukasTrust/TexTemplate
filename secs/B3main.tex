@@ -21,7 +21,7 @@ Sivaram and colleagues introduce a method for surface representation by partitio
 To achieve this, they greedily merge adjacent triangles into near-rectangular quads.
 This process serves as a simplification step that reduces the meshs topological complexity, eliminates non-manifold configurations and results in a more compact and regular representation of the surface geometry.
 By relying on quadrilateral patches rather than a purely triangular mesh, they decrease the overall number of patches and simplify the interpolation domain for later processing.
-\usetikzlibrary{calc, shapes.geometric, arrows.meta, decorations.pathreplacing}
+\usetikzlibrary{calc, shapes.geometric, arrows.meta, decorations.pathreplacing, positioning, shapes}
 \begin{figure}[ht]
   \centering
   \begin{adjustbox}{center}
@@ -44,7 +44,7 @@ By relying on quadrilateral patches rather than a purely triangular mesh, they d
       \draw[gray] (C) -- (E) -- (F) -- cycle;
       \draw[gray] (E) -- (G) -- (F) -- cycle;
       \draw[gray] (F) -- (G) -- (H) -- cycle;
-      \node at (1.2, -0.4) {\small (a) Irregular Triangle Mesh in $\mathbb{R}^3$};
+      \node at (1.2, -0.4) {\small \textbf{(a)} Irregular Triangle Mesh in $\mathbb{R}^3$};
     \end{scope}
 
     % === Merge Arrow ===
@@ -65,7 +65,7 @@ By relying on quadrilateral patches rather than a purely triangular mesh, they d
       \draw[blue, thick] (B) -- (E) -- (F) -- (C) -- cycle; % highlighted patch
       \draw[gray] (E) -- (G) -- (H) -- (F) -- cycle;
 
-      \node at (1.2, -0.4) {\small (b) Quad Mesh $\Sigma$ in $\mathbb{R}^3$};
+      \node at (1.2, -0.4) {\small \textbf{(b)} Quad Mesh $\Sigma$ in $\mathbb{R}^3$};
     \end{scope}
 
     % === Down Arrow to Unit Square ===
@@ -78,7 +78,7 @@ By relying on quadrilateral patches rather than a purely triangular mesh, they d
       \filldraw[black] (2,0) circle (1pt) node[anchor=north west] {\small $(1,0)$};
       \filldraw[black] (0,2) circle (1pt) node[anchor=south east] {\small $(0,1)$};
       \filldraw[black] (2,2) circle (1pt) node[anchor=south west] {\small $(1,1)$};
-      \node at (1,-0.7) {\small (c) Unit Square $[0,1]^2$};
+      \node at (1,-0.7) {\small \textbf{(c)} Unit Square $[0,1]^2$};
     \end{scope}
 
     % === Left Arrow to Feature Field ===
@@ -103,7 +103,7 @@ By relying on quadrilateral patches rather than a purely triangular mesh, they d
       }
 
       % Patch label
-      \node at (1,-0.7) {\small (d) Patch $\sigma$};
+      \node at (1,-0.7) {\small \textbf{(d)} Patch $\sigma$};
     \end{scope}
     
   \end{tikzpicture}
@@ -148,12 +148,12 @@ Sivaram and colleagues feed this quadrilateral mesh and its associated features 
 
 \subsection{Mesh Extraction from Neural Geometry Fields}
 
-Building upon this structured base mesh and the interpolated feature field, Sivaram and colleagues describe a method for extracting a refined surface representation suitable for inverse rendering and further optimization. 
+Building upon this structured base mesh and the feature field, Sivaram and colleagues describe a method for extracting a refined surface representation suitable for inverse rendering and further optimization. 
 This process involves sampling a mesh from the neural geometry field by displacing the bilinearly interpolated points on each patch using a learned neural deformation. 
 To achieve this, each point on the base surface is augmented with feature information and passed through a positional encoding function, defined as: 
 \[\text{enc}(\mathbf{v}, \mathbf{f}) = (\sin(2^0 \mathbf{v}), \cos(2^0 \mathbf{v}), \ldots, \sin(2^L \mathbf{v}), \cos(2^L \mathbf{v}), \mathbf{f}). \tag{3}\] 
 This function encodes the spatial position $\mathbf{v}$ and its associated feature vector $\mathbf{f}$, which are obtained through bilinear interpolation as described in the previous section. 
-The use of sine and cosine functions at increasing frequencies allows the network to capture high-frequency geometric variations that plain coordinates cannot represent effectively. 
+The use of sine and cosine functions at exponentially increasing frequencies allows the network to represent high-frequency geometric details that plain coordinates cannot encode effectively.
 This is particularly useful for learning fine-grained deformations or details that arise during surface reconstruction. 
 The parameter $L$ is a hyperparameter that controls the number of frequency bands used in the encoding. 
 It determines how many sine and cosine components are included; higher values of $L$ enable the encoding of finer spatial details, at the cost of higher-dimensional input. 
@@ -172,7 +172,7 @@ To extract a mesh from this continuous representation, Sivaram and colleagues em
 
 \subsubsection{Sampling the Patch Domain}
 
-Each surface patch is discretized by sampling points $\mathbf{u}$ on a uniform grid with resolution $k \times k$, producing $k^2$ samples per patch. 
+Each surface patch is discretized by uniformly sampling \(k\) points along each axis of the domain \([0,1]^2\), producing a total of \(k^2\) points per patch.
 These grid points span the domain $[0,1]^2$, which parameterizes the patch. 
 The choice of a regular grid simplifies the process of mesh construction by ensuring consistent vertex spacing and predictable connectivity patterns. 
 The resolution $k$ controls the level of surface detail: higher values yield denser meshes capable of capturing finer geometric features. 
@@ -261,48 +261,113 @@ The final vertex position on the output surface is then computed using Equation 
 Once all displaced vertex positions for a patch are computed, the method constructs mesh connectivity locally for each patch. 
 The $k \times k$ grid of vertices is triangulated using a regular pattern, similar to the way elevation data is converted into triangles in height-field rendering. 
 Typically, this involves connecting each $2 \times 2$ block of adjacent vertices into two triangles. 
-
 Since each patch is handled independently, this process creates a structured local mesh per patch. 
-When all patches are assembled, their boundaries align due to the consistent sampling grid and the result is a semi-regular global mesh. 
+The final surface mesh is obtained by concatenating the displaced patches, whose boundaries align due to the consistent sampling grid and the result is a semi-regular global mesh. 
 This structure strikes a balance between the flexibility of unstructured meshes and the computational efficiency of regular grids, enabling both detailed surface modeling and efficient downstream processing (e.g., rendering or optimization). 
+To further improve surface reconstruction quality during mesh extraction, Sivaram and colleagues introduce a jittering strategy that enhances sampling within each patch. 
+Rather than relying solely on uniform grid samples, their method perturbs each sample slightly to better capture local surface variations. 
+Specifically, given the regular grid sample points
+\[\hat{u} = \langle \frac{k-1}{i}, \frac{k-1}{j} \rangle \quad \text{for } 0 \leq i,j \leq k-1,\]
+each sample position is randomly offset during optimization by sampling from a disk centered at the origin: 
+\[u \sim \hat{u} + D(\omega),\]
+where \( D(\omega) \) denotes a uniform distribution over a disk of radius \( \omega \). 
+This jittering, applied during optimization, acts as a regularizer that enhances gradient flow and helps capture fine geometric details. 
+To avoid artifacts such as triangle fold-overs, the jitter is bounded to a disk of radius less than \( \frac{0.5}{k-1} \), and boundary samples remain unperturbed (\( \omega = 0 \)). 
+Additionally, to preserve patch boundaries and maintain alignment between adjacent patches, the jitter amount is set to zero for all boundary samples (\( \omega = 0 \)). 
+This randomized sampling approach acts as a regularization mechanism, providing richer gradient signals during optimization and encouraging the neural geometry field to more accurately reconstruct the underlying surface. 
+This effect is especially beneficial in regions where vertex density is low (i.e., with fewer or larger patches), allowing the model to capture finer details. 
+\begin{figure}[ht]
+  \centering
+  \begin{adjustbox}{center}
+  \begin{tikzpicture}[scale=0.85]
 
-%\begin{figure}[ht]
-%\centering
-%\begin{adjustbox}{center}
-%\begin{tikzpicture}[scale=1.5, every node/.style={font=\small}]
-% Shifted displaced coordinates (output of MLP)
-%\coordinate (v1') at (1.4,0.1);
-%\coordinate (v2') at (2.4,0.3);
-%\coordinate (v3') at (2.2,1.1);
-%\coordinate (v4') at (1.4,1.1);
-%\coordinate (v5') at (3.0,0.7);
-%\coordinate (v6') at (2.7,1.4);
-%\coordinate (v7') at (3.6,0.4);
-%\coordinate (v8') at (3.8,1.3);
+    % === (a) Irregular Triangle Mesh ===
+    \begin{scope}
+      \coordinate (A) at (0,0);
+      \coordinate (B) at (1,0.2);
+      \coordinate (C) at (0.8,1);
+      \coordinate (D) at (0,1);
+      \coordinate (E) at (1.6,0.6);
+      \coordinate (F) at (1.3,1.3);
+      \coordinate (G) at (2.2,0.3);
+      \coordinate (H) at (2.4,1.2);
 
-% Draw displaced points with specific label placements
-%\foreach \i/\pos in {1/below, 2/below, 3/above, 4/above, 5/below, 6/above, 7/below, 8/above} {
-%  \fill[gray] (v\i') circle (1pt);
-%  \node[\pos=2pt] at (v\i') {$\bm{v_\i'}$};
-%}
+      \draw[gray] (A) -- (B) -- (C) -- (D) -- cycle;
+      \draw[blue, thick] (B) -- (E) -- (F) -- (C) -- cycle; % highlighted patch
+      \draw[gray] (E) -- (G) -- (H) -- (F) -- cycle;
 
-% Triangulated mesh connections (manual, like in example)
-%\draw[gray, dashed] (v1') -- (v2') -- (v3') -- cycle;
-%\draw[gray, dashed] (v1') -- (v3') -- (v4') -- cycle;
+      \node at (1.2, -0.4) {\small \textbf{(a)} Quad Mesh $\Sigma$ in $\mathbb{R}^3$};
+    \end{scope}
 
-%\draw[gray, dashed] (v2') -- (v5') -- (v3') -- cycle;
-%\draw[gray, dashed] (v3') -- (v5') -- (v6') -- cycle;
+    % Arrow
+    \draw[->, thick] (2.6,0.7) -- (5.0,0.7) node[midway, above] {};
 
-%\draw[gray, dashed] (v5') -- (v7') -- (v6') -- cycle;
-%\draw[gray, dashed] (v6') -- (v7') -- (v8') -- cycle;
-% MLP block (left)
-%\node[draw, minimum width=1cm, minimum height=1.8cm, align=center] (mlp) at (0,0.9) {MLP};
+    % === (b) Regular Grid ===
+    \begin{scope}[xshift=5.5cm]
+      \foreach \x in {0,1,2} {
+        \foreach \y in {0,1,2} {
+          \filldraw[black] (\x, \y) circle (1.5pt);
+        }
+      }
 
-% Straight arrow from MLP to right (input to mesh)
-%\draw[->, thick] (mlp.east) -- ++(1.0, 0);
+      \draw[blue, thick] (0,0) rectangle (2,2);
+      \node at (1,-0.5) {\small \textbf{(b)} Regular Grid};
+    \end{scope}
 
-%\end{tikzpicture}
-%\end{adjustbox}
-%\caption{Illustration of neural displacements. The MLP transforms input features into displaced mesh points $\bm{v_i'}$. The dashed gray lines indicate the local mesh structure.}
-%\label{fig:neural_displacement}
-%\end{figure}
+    % Arrow
+    \draw[->, thick] (6.5,-0.8) -- (6.5,-1.6) node[midway, right] {Jitter};
+
+    % === (c) Jittered Grid ===
+    \begin{scope}[xshift=5.5cm, yshift=-4.0cm]
+      \foreach \x/\y in {
+        0.0/0.0, 1.1/0.1, 1.9/0.0, 0.2/1.0,
+        2.1/1.9, 1.1/1.1, 1.9/1.0, -0.1/2.0,
+        0.8/1.9
+      } {
+        \filldraw[red, draw=black] (\x, \y) circle (1.5pt);
+      }
+
+      \draw[blue, thick, dashed] (0,0) rectangle (2,2);
+      \node at (1,-0.5) {\small \textbf{(c)} Jittered Sampling ($\omega$)};
+    \end{scope}
+
+    % Arrow
+    \draw[->, thick] (5.0,-3) -- (2.6,-3) node[midway, above] {};
+
+    % === (d) Irregular Field + Jittered Points ===
+    \begin{scope}[yshift=-4.0cm]
+      
+  \coordinate (A) at (0,0);
+  \coordinate (B) at (1.000,0.200); %(1,0.2.0)
+  \coordinate (C) at (0.760,1.100); %(0.8,1.0)
+  \coordinate (D) at (0,1);
+  \coordinate (E) at (1.496,0.580); %(1.6,0.6)
+  \coordinate (F) at (1.377,1.292); %(1.3,1.3)
+  \coordinate (G) at (2.2,0.3);
+  \coordinate (H) at (2.4,1.2);
+
+  \draw[gray] (A) -- (B) -- (C) -- (D) -- cycle;
+  \draw[blue, thick] (B) -- (E) -- (F) -- (C) -- cycle; % highlighted patch
+  \draw[gray] (E) -- (G) -- (H) -- (F) -- cycle;
+
+
+  % === Jittered Points Mapped from (c) ===
+  %\filldraw[red, draw=black] (1.000,0.200) circle (1.5pt); % (0.0, 0.0)
+  %\filldraw[red, draw=black] (1.307,0.385) circle (1.5pt); % (1.1, 0.1)
+  %\filldraw[red, draw=black] (1.496,0.580) circle (1.5pt); % (1.9, 0.0)
+  %\filldraw[red, draw=black] (0.905,0.700) circle (1.5pt); % (0.2, 1.0)
+  %\filldraw[red, draw=black] (1.377,1.292) circle (1.5pt); % (2.1, 1.9)
+  %\filldraw[red, draw=black] (1.222,0.885) circle (1.5pt); % (1.1, 1.1)
+  %\filldraw[red, draw=black] (1.450,0.880) circle (1.5pt); % (1.9, 1.0)
+  %\filldraw[red, draw=black] (0.760,1.100) circle (1.5pt); % (-0.1, 2.0)
+  %\filldraw[red, draw=black] (1.091,1.080) circle (1.5pt); % (0.8, 1.9)
+
+  \node at (1.2, -0.5) {\small \textbf{(d)} Jittered Sampling in Complex Field};
+\end{scope}
+
+
+  \end{tikzpicture}
+  \end{adjustbox}
+  \caption{Progression from an irregular triangle mesh (a) to a regular sampling grid (b), jittered sampling within grid cells (c), and finally applying jittered sampling within a more complex field (d).}
+  \label{fig:progression_sampling}
+\end{figure}
