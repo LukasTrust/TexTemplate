@@ -17,10 +17,11 @@ In the following sections, we explore each stage in greater detail and provide a
 
 \subsection{Surface Partitioning into Patches}
 
-Sivaram and colleagues introduce a method for surface representation by partitioning a simplified base mesh, denoted as $\Sigma$, into quadrilateral patches $\sigma$.
-To achieve this, they greedily merge adjacent triangles into near-rectangular quads.
-This process serves as a simplification step that reduces the meshs topological complexity, eliminates non-manifold configurations and results in a more compact and regular representation of the surface geometry.
-By relying on quadrilateral patches rather than a purely triangular mesh, they decrease the overall number of patches and simplify the interpolation domain for later processing.
+Sivaram and colleagues introduce a method for surface representation by partitioning a base mesh, denoted as $\Sigma$, into quadrilateral patches $\sigma$ (see Figure~2).  
+The process begins by simplifying the input mesh using QSlim, a robust and scalable algorithm that preserves important topological features such as holes and intersections.  
+Following simplification, adjacent triangles are greedily merged into near-rectangular quadrilaterals, removing non-manifold triangles in the process.  
+This allows the method to handle non-manifold input surfaces and still produce a consistent quadrilateral patch structure.  
+This produces a compact and regular representation of the surface geometry, with fewer patches and improved structure.  
 \usetikzlibrary{calc, shapes.geometric, arrows.meta, decorations.pathreplacing, positioning, shapes}
 \begin{figure}[ht]
   \centering
@@ -111,36 +112,34 @@ By relying on quadrilateral patches rather than a purely triangular mesh, they d
   \caption{Surface processing pipeline: The irregular triangle mesh is simplified and merged into a quadrilateral mesh $\Sigma$. A quadrilateral patch is extracted, which is then parameterized over the unit square $[0,1]^2$. This parameterization facilitates both geometric and feature field interpolation, with feature values interpolated at the patch's corners and at an arbitrary point $\bm{u}$. Inspired by~\cite{sivaram2024}.}
   \label{fig:surface_processing_pipeline}
 \end{figure}
-The initial mesh is simplified using QSlim \cite{garland1997}, a robust simplification algorithm that preserves critical structures such as holes and intersections.
-After simplification, adjacent triangles are merged to form quadrilateral patches, producing a base mesh with a reduced patch count $|\mathcal{Q}|$ compared to a fully triangulated representation.
-This reduction compresses the mesh but also provides the base for an efficient and structured interpolation.
-Each patch $\sigma$ is required to be diffeomorphic to the unit square $[0,1]^2$; that is, there must exist a smooth, bijective mapping with a smooth inverse between the patch and the square.
-This constraint ensures that interpolation across the patch is well-defined and invertible.
-The four corner vertices of each patch are mapped as follows: 
+By relying on quadrilateral patches instead of a fully triangulated mesh, the method reduces the overall patch count $|Q|$ and simplifies the interpolation domain for later processing.  
+This compression not only reduces storage requirements but also provides the foundation for an efficient and structured interpolation framework.  
 
-\((0,0)\rightarrow v_{00}, \quad (1,0)\rightarrow v_{10}, \quad (0,1)\rightarrow v_{01}, \quad (1,1)\rightarrow v_{11}\).
+To ensure smooth and consistent interpolation, each patch $\sigma$ must be diffeomorphic to the unit square $[0,1]^2$, meaning there exists a smooth, bijective mapping with a smooth inverse between the patch and the unit square.  
+The four corner vertices of a patch are mapped as:
+\[(0,0)\rightarrow v_{00}, \quad (1,0)\rightarrow v_{10}, \quad (0,1)\rightarrow v_{01}, \quad (1,1)\rightarrow v_{11}\]
 
-To map an arbitrary point $u = (u_x, u_y)$ within the unit square to its corresponding location on the surface patch $\sigma$, bilinear interpolation is applied:
-\[\sigma(u) = (1 - u_y)\left[(1 - u_x)v_{00} + u_x v_{10}\right] + u_y\left[(1 - u_x)v_{01} + u_x v_{11}\right]. \tag{1}\]
-This two-stage interpolation first computes intermediate values along one axis (e.g., horizontal), then interpolates along the other axis (e.g., vertical).
-The result is a smooth and continuous surface across each quadrilateral patch.
-In this context, interpolation refers to estimating values at points within a patch based on the known values at its four corners.
-Bilinear interpolation smoothly blends these corner values to compute both positions and other properties (such as feature vectors) for any point inside the patch.
-This approach offers a simple and efficient way to represent complex surfaces using only a few key points.
-Beyond geometry, Sivaram et al.\ also interpolate scalar or vector-valued feature fields defined at the patch corners.
-Given feature values $f_{00}, f_{10}, f_{01}, f_{11}$, the interpolated feature value $\Psi(u)$ at point $u$ is calculated as:
-\[\Psi(u) = (1 - u_y)\left[(1 - u_x)f_{00} + u_x f_{10}\right] + u_y\left[(1 - u_x)f_{01} + u_x f_{11}\right]. \tag{2}\]
-This interpolation ensures that feature values vary smoothly across the surface, which is essential for effective learning in subsequent tasks.
-Features are represented as learnable, high-dimensional vectors attached to the corners of each quadrilateral patch.
-These feature vectors act as local descriptors, encoding important surface properties and guiding the neural network during the deformation process.
-The feature field $\Psi$ assigns a vector in $\mathbb{R}^F$ (where $F$ is typically 32 or 64) to each point on the surface, interpolated from the patch corners.
-These features are optimized alongside the network parameters during training to accurately reconstruct the target surface geometry.
-The complete set of mesh vertices and their associated features is defined as:
-\[V = \bigcup_{\sigma} \{v_{00}, v_{10}, v_{01}, v_{11}\}
-\quad
-F = \bigcup_{\sigma} \{f_{00}, f_{10}, f_{01}, f_{11}\}.\]
-Together, $V$ and $F$ describe the base geometry and the spatial distribution of features across the surface.
-Sivaram and colleagues feed this quadrilateral mesh and its associated features into a neural network, $\text{MLP}_\theta$, which learns to refine the geometry while preserving the simplified base’s topology and structural properties.
+To map an arbitrary point $u = (u_x, u_y)$ within the unit square to its corresponding location on the surface patch $\sigma$, bilinear interpolation is applied:  
+\[\sigma(u) = (1 - u_y)((1 - u_x)v_{00} + u_x v_{10}) + u_y((1 - u_x)v_{01} + u_x v_{11}) \tag{1}\]  
+This yields a continuous and smooth surface.  
+Conceptually, this bilinear interpolation can be thought of as first interpolating along one axis (e.g., horizontal), then the other.  
+The same interpolation strategy is used to propagate feature vectors defined at each patch corner.  
+
+Each patch corner is associated with a high-dimensional learnable feature vector.  
+In the configuration used by Sivaram et al., each vector has 20 dimensions, acting as a localized descriptor of geometric or semantic properties.  
+The interpolated feature value $\Psi(u)$ for a point $u$ inside a patch is computed using bilinear blending:  
+\[\Psi(u) = (1 - u_y)((1 - u_x)f_{00} + u_x f_{10}) + u_y((1 - u_x)f_{01} + u_x f_{11}) \tag{2}\]
+
+The feature field $\Psi: \Sigma \rightarrow \mathbb{R}^F$ (with $F = 20$ in the authors' setup) allows the model to smoothly interpolate semantic information across the surface.  
+These features, interpolated at arbitrary points on the patch, can be sampled across the surface for later neural processing stages.  
+
+The complete set of mesh vertices and their associated features is defined as:  
+\[V = \bigcup_\sigma \{v_{00}, v_{10}, v_{01}, v_{11}\}, \quad F = \bigcup_\sigma \{f_{00}, f_{10}, f_{01}, f_{11}\}\]  
+
+These values are bilinearly interpolated across each patch and serve as input for the subsequent neural deformation stage.  
+The surface layout defined in this step provides a structured yet flexible representation that supports efficient learning and reconstruction.  
+
+The following section describes how this patch-based representation is used to generate detailed geometry through a neural deformation model, including the role of tessellation, feature encoding, and the architecture of the MLP.  
 
 
 
@@ -148,56 +147,32 @@ Sivaram and colleagues feed this quadrilateral mesh and its associated features 
 
 \subsection{Mesh Extraction from Neural Geometry Fields}
 
-Building upon this structured base mesh and the feature field, Sivaram and colleagues describe a method for extracting a refined surface representation suitable for inverse rendering and further optimization. 
-This process involves sampling a mesh from the neural geometry field by displacing the bilinearly interpolated points on each patch using a learned neural deformation. 
-To achieve this, each point on the base surface is augmented with feature information and passed through a positional encoding function, defined as: 
-\[\text{enc}(\mathbf{v}, \mathbf{f}) = (\sin(2^0 \mathbf{v}), \cos(2^0 \mathbf{v}), \ldots, \sin(2^L \mathbf{v}), \cos(2^L \mathbf{v}), \mathbf{f}). \tag{3}\] 
-This function encodes the spatial position $\mathbf{v}$ and its associated feature vector $\mathbf{f}$, which are obtained through bilinear interpolation as described in the previous section. 
-The use of sine and cosine functions at exponentially increasing frequencies allows the network to represent high-frequency geometric details that plain coordinates cannot encode effectively.
-This is particularly useful for learning fine-grained deformations or details that arise during surface reconstruction. 
-The parameter $L$ is a hyperparameter that controls the number of frequency bands used in the encoding. 
-It determines how many sine and cosine components are included; higher values of $L$ enable the encoding of finer spatial details, at the cost of higher-dimensional input. 
-By concatenating the interpolated feature vector $\mathbf{f}$ to this high-frequency encoding of $\mathbf{v}$, the model receives both spatial and semantic information in a unified representation, which is crucial for accurately learning complex deformations across the mesh \cite{Mildenhall2020}. 
-For any sample point $\mathbf{u} \in [0,1]^2$ within a patch $\sigma$, the final displaced coordinate on the output surface $\Lambda$ is computed as:\[
-\Lambda(\mathbf{u}) = \sigma(\mathbf{u}) + \text{MLP}_\theta \circ \text{enc}(\sigma(\mathbf{u}), \Psi(\mathbf{u})). \tag{4}\] 
-This equation applies a learned displacement, via the neural network $\text{MLP}_\theta$, to the base surface location $\sigma(\mathbf{u})$, based on both geometry and feature encoding. 
-The function $\text{MLP}_\theta$ refers to a multi-layer perceptron, a type of feedforward neural network consisting of several fully connected layers. 
-Each layer performs a linear transformation followed by a non-linear activation function (e.g., ReLU or GELU). 
-The architecture typically includes an input layer (matching the dimension of the encoded vector), one or more hidden layers and an output layer that produces a 3D displacement vector. 
-The MLP is responsible for learning how to transform the combined positional and feature information into a displacement vector that deforms the base surface towards the target shape. 
-The parameters $\theta$ include all trainable weights and biases of the MLP. 
-These parameters are optimized during training using gradient-based methods (e.g., stochastic gradient descent or Adam) to minimize a loss function measuring the discrepancy between the predicted surface and the ground truth. 
-Through this process, the MLP learns complex deformation patterns that are conditioned on both spatial position and semantic surface features. 
-To extract a mesh from this continuous representation, Sivaram and colleagues employ a four-step procedure: 
-
-\subsubsection{Sampling the Patch Domain}
-
-Each surface patch is discretized by uniformly sampling \(k\) points along each axis of the domain \([0,1]^2\), producing a total of \(k^2\) points per patch.
-These grid points span the domain $[0,1]^2$, which parameterizes the patch. 
-The choice of a regular grid simplifies the process of mesh construction by ensuring consistent vertex spacing and predictable connectivity patterns. 
-The resolution $k$ controls the level of surface detail: higher values yield denser meshes capable of capturing finer geometric features. 
-
-\subsubsection{Computing Base Vertices and Features}
-
-For each sampled point $\mathbf{u}$, the method computes: 
-\begin{itemize}
-  \item The corresponding base position $\sigma(\mathbf{u})$, which maps $\mathbf{u}$ to a 3D point on the undeformed base surface and 
-  \item The associated interpolated feature vector $\Psi(\mathbf{u})$, which encodes semantic or learned geometric information at that location.
-\end{itemize}
-
-These computations follow the mappings previously defined in Equations (1) and (2). 
-Together, these values serve as the inputs to the positional encoding and deformation steps. 
-
-\subsubsection{Applying Neural Displacements}
-
-Next, the combined positional and feature inputs are passed through the encoding function (as defined earlier) and the result is fed into the learned multi-layer perceptron (MLP$_\theta$). 
-This network outputs a 3D displacement vector for each sampled point. 
-The final vertex position on the output surface is then computed using Equation (4), transforming each point from the base mesh into its deformed position on the refined surface and capturing both coarse shape and fine geometric detail. 
+Building on the structured base mesh and a learned per-patch feature field, Sivaram et al.\ propose a neural surface deformation framework that reconstructs high-fidelity geometry by predicting local displacements.  
+Each point $u \in [0,1]^2$ within a patch domain is mapped through a learned displacement field computed by a multi-layer perceptron ($\text{MLP}_\theta$), conditioned on both geometry and semantic features.  
 
 
 
 
 
+\subsubsection{Patch-Based Sampling and Feature Encoding}
+
+To extract a high-resolution mesh from the learned neural geometry field, Sivaram et al.\ subdivide the surface of the structured base mesh into parametric patches.  
+Each quadrilateral face defines a patch $\sigma$ that maps the unit square domain $[0,1]^2$ onto a corresponding portion of the 3D surface using bilinear interpolation.  
+Within each patch, a regular sampling grid of resolution $k \times k$ is established, creating a set of 2D coordinates $u_{ij} \in [0,1]^2$, where $i,j \in \{0, \ldots, k-1\}$.  
+
+Within each patch, a regular $k \times k$ sampling grid is defined, producing 2D coordinates $u_{ij} \in [0,1]^2$, where $i,j \in \{0,\ldots,k-1\}$.  
+For each sample $u_{ij}$, two interpolations are performed:  
+\begin{enumerate}
+    \item The base 3D position $\sigma(u_{ij})$,  
+    \item The interpolated feature vector $\Psi(u_{ij})$.
+\end{enumerate}
+
+To capture fine-scale surface details, each MLP input includes a high-frequency positional encoding of the 3D position $v = \sigma(u)$ and the feature vector $f = \Psi(u)$.  
+This encoding is defined as:  
+\[\text{enc}(v, f) = (\sin(2^0 v), \cos(2^0 v), \ldots, \sin(2^L v), \cos(2^L v), f) \tag{3}\]  
+where $L$ controls the number of frequency bands, and thereby the positional encoding resolution.  
+This concatenated representation combines geometric and semantic information in a form well-suited for learning complex surface deformations~\cite{mildenhall2020nerf}.  
+Sivaram et al.\ set $L = 8$ in their configuration.  
 \begin{figure}[ht]
   \centering
   \begin{adjustbox}{center}
@@ -255,27 +230,54 @@ The final vertex position on the output surface is then computed using Equation 
 
 
 
+\subsubsection{Neural Surface Deformation with MLP}
 
-\subsubsection{Constructing Connectivity}
+The displacement of a point $u \in [0,1]^2$ on patch $\sigma$ is computed via the MLP applied to the encoded position and features.  
+The final deformed position $\Lambda(u)$ is given by:  
+\[\Lambda(\mathbf{u}) = \sigma(\mathbf{u}) + \text{MLP}_\theta \circ \text{enc}(\sigma(\mathbf{u}), \Psi(\mathbf{u})) \tag{4}\]
+This formulation enables local, learned deformations of the base mesh, capturing geometric details beyond the coarse patch approximation.  
 
-Once all displaced vertex positions for a patch are computed, the method constructs mesh connectivity locally for each patch. 
-The $k \times k$ grid of vertices is triangulated using a regular pattern, similar to the way elevation data is converted into triangles in height-field rendering. 
-Typically, this involves connecting each $2 \times 2$ block of adjacent vertices into two triangles. 
-Since each patch is handled independently, this process creates a structured local mesh per patch. 
-The final surface mesh is obtained by concatenating the displaced patches, whose boundaries align due to the consistent sampling grid and the result is a semi-regular global mesh. 
-This structure strikes a balance between the flexibility of unstructured meshes and the computational efficiency of regular grids, enabling both detailed surface modeling and efficient downstream processing (e.g., rendering or optimization). 
-To further improve surface reconstruction quality during mesh extraction, Sivaram and colleagues introduce a jittering strategy that enhances sampling within each patch. 
-Rather than relying solely on uniform grid samples, their method perturbs each sample slightly to better capture local surface variations. 
-Specifically, given the regular grid sample points
-\[\hat{u} = \langle \frac{k-1}{i}, \frac{k-1}{j} \rangle \quad \text{for } 0 \leq i,j \leq k-1,\]
-each sample position is randomly offset during optimization by sampling from a disk centered at the origin: 
-\[u \sim \hat{u} + D(\omega),\]
-where \( D(\omega) \) denotes a uniform distribution over a disk of radius \( \omega \). 
-This jittering, applied during optimization, acts as a regularizer that enhances gradient flow and helps capture fine geometric details. 
-To avoid artifacts such as triangle fold-overs, the jitter is bounded to a disk of radius less than \( \frac{0.5}{k-1} \), and boundary samples remain unperturbed (\( \omega = 0 \)). 
-Additionally, to preserve patch boundaries and maintain alignment between adjacent patches, the jitter amount is set to zero for all boundary samples (\( \omega = 0 \)). 
-This randomized sampling approach acts as a regularization mechanism, providing richer gradient signals during optimization and encouraging the neural geometry field to more accurately reconstruct the underlying surface. 
-This effect is especially beneficial in regions where vertex density is low (i.e., with fewer or larger patches), allowing the model to capture finer details. 
+
+
+
+
+\subsubsection{Objective Function}
+
+In contrast to conventional inverse rendering pipelines that rely solely on image-based supervision, our method benefits from direct access to attributes of the reference geometry. 
+Among these, we utilize surface normal vectors as a reliable signal for guiding local shape reconstruction. 
+Given the deformed surface produced by the neural deformation function $\Lambda(u)$, we evaluate differentiable vertex normals on the sampled mesh using standard geometric operations, specifically, cross products of adjacent triangle edges. 
+During rasterization, these per-vertex normals are interpolated across fragments to produce normal vector frame buffers $N(\cdot)$ for both the reference surface $\Gamma$ and the predicted surface $\Sigma$. 
+Using these buffers, we define an image-space normal consistency loss that measures the per-pixel alignment between predicted and reference normals: 
+\begin{equation} L = \frac{1}{|N(\cdot)|} \|N(\Gamma) - N(\Sigma)\|_1 + \frac{1}{|V|} \|L_V\|_1 \end{equation} 
+This loss term enforces local geometric agreement in appearance and orientation, encouraging the network to reproduce surface detail. 
+To promote a smooth and uniform distribution of vertices across the surface, we include a Laplacian smoothness term, defined as: 
+\begin{equation} L_{\text{normal}} = \frac{1}{|N(\cdot)|} \|L_V\|_1 \end{equation} 
+Where $L$ is the uniform mesh Laplacian operator applied to the set of uniformly sampled vertices $V$. 
+This term regularizes the deformation by penalizing irregular local configurations, helping to avoid artifacts such as vertex clustering or excessive warping. 
+The total objective function combines both terms: 
+\begin{equation} L = L_{\text{normal}} + L_{\text{laplacian}} \end{equation} 
+This unified formulation balances geometric accuracy with structural regularity, serving as the primary supervisory signal during training.
+
+
+
+
+
+\subsubsection{Jittered Sampling for Detail and Regularization}
+
+To enhance surface detail and improve gradient flow during training, Sivaram et al.\ introduce a jittering strategy, which slightly randomizes the sampling positions within each patch.  
+Normally, sampling would occur on a perfectly regular grid across the surface, meaning each sampled point lies at a predictable, evenly spaced coordinate (e.g., every $1/10$th of the patch width).  
+However, such uniform sampling can lead to aliasing artifacts and limited expressiveness, especially when the surface has fine-grained or high-frequency geometric details.  
+
+To address this, the authors perturb each interior sample point (i.e., points not lying on the patch boundary) by a small random offset.  
+More specifically, each 2D point $u \in [0,1]^2$ is randomly shifted by a vector drawn from a uniform distribution over a small disk of radius $\omega$.  
+This is written as $u \sim u + D(\omega)$, where $D(\omega)$ represents a uniform sampling over a disk centered at the origin.  
+Visually, instead of forming a rigid grid, the sample points become slightly ``noisy,'' helping the model to better generalize and learn fine surface variations.  
+
+Importantly, the jitter radius $\omega$ is kept small (less than half the grid spacing, $\omega < 0.5k^{-1}$) to avoid triangle fold-overs, a common issue in mesh generation where triangle edges cross over each other, causing rendering artifacts and invalid geometry.  
+Additionally, to preserve seamless boundaries between neighboring patches, boundary samples are left untouched (i.e., $\omega=0$ at the edges), ensuring that patch edges still align precisely.  
+
+This jittering acts as a form of regularization, helping the model to avoid overfitting to a rigid sampling pattern and instead learn a smoother and more flexible deformation field.  
+It also encourages robustness in surface prediction, particularly in low-resolution cases, where sparse sampling would otherwise miss subtle details.  
 \begin{figure}[ht]
   \centering
   \begin{adjustbox}{center}
@@ -371,3 +373,67 @@ This effect is especially beneficial in regions where vertex density is low (i.e
   \caption{Progression from an irregular triangle mesh (a) to a regular sampling grid (b), jittered sampling within grid cells (c), and finally applying jittered sampling within a more complex field (d).}
   \label{fig:progression_sampling}
 \end{figure}
+
+
+
+
+
+
+\subsubsection{Mesh Construction and Differentiable Training}
+
+Once the displaced 3D positions for all sample points have been computed using the MLP, the mesh is constructed by triangulating the sampled grid.  
+Specifically, the $k \times k$ sampling grid within each patch defines $(k-1)^2$ square cells (quads), each of which is split into two triangles in a consistent pattern, similar to how elevation maps are converted into triangle meshes (often called height fields).  
+Since each patch follows the same sampling and triangulation logic, and boundary points are shared consistently, the resulting mesh is semi-regular and coherent across patches, forming a watertight and well-structured surface.  
+
+The MLP used by Sivaram and colleagues consists of two hidden layers with 64 neurons each and uses activation functions not explicitly specified by the authors.  
+These functions introduce the non-linearities necessary for modeling complex deformation patterns, but their exact form is not detailed in the original description.  
+Both the network parameters $\theta$ and the per-vertex feature vectors are optimized jointly during training.  
+
+The training pipeline incorporates differentiable rendering using \texttt{NVDIFFRAST}, a GPU-accelerated rasterizer specifically designed for gradient-based optimization of 3D geometry and appearance~\cite{niemeyer2020}.  
+Unlike traditional rendering methods, which are inherently non-differentiable and unsuitable for gradient-based learning, differentiable rendering allows loss gradients from image space to flow back into the 3D mesh and feature representations.  
+This capability enables the system to iteratively update both geometry and per-patch features, improving alignment between the rendered outputs and the multi-view image supervision~\cite{kato2020}.  
+
+To supervise this optimization process, the model relies on multi-view images, which are 2D projections of the object captured from various angles.  
+These views serve as a comprehensive set of visual observations that constrain the reconstruction.  
+Specifically, the 3D surface is rendered from 200 virtual camera viewpoints that simulate the perspectives from which the object could be observed.  
+The camera viewpoints are uniformly distributed around the object to ensure comprehensive angular coverage, allowing the model to observe and reconstruct surface details from every side.  
+This is essential for achieving a reconstruction that is geometrically accurate and consistent from every direction.  
+
+For efficiency and improved training dynamics, these views are grouped into batches of 10, with each view incorporating three depth layers per pixel.  
+This multi-layer rendering helps capture partial occlusions and complex visibility effects, such as surfaces seen through transparent or semi-transparent regions.  
+By doing so, the model can reason more accurately about the 3D structure and avoid artifacts caused by occluded or ambiguous regions~\cite{burggraaff2018}.  
+
+This comprehensive setup, combining differentiable rendering, multi-view supervision, and visibility-aware optimization, allows the learning algorithm to reconstruct detailed and consistent surface geometry.  
+Optimization is performed using the Adam optimizer with a fixed learning rate of $10^{-3}$, providing a stable update mechanism for both the mesh deformation network and the associated feature vectors.  
+The Adam optimizer is an adaptive method that adjusts the learning rate for each parameter based on the first and second moments of the gradients.  
+This allows the optimizer to adaptively correct the learning rates during training, accelerating convergence while avoiding large, unstable updates.  
+The fixed learning rate ensures stability during training, while the adaptive nature of Adam helps the model learn more efficiently from the gradients provided by the differentiable rendering process~\cite{kingma2017}.  
+
+
+
+
+
+\subsubsection{Inverse Rendering}
+
+To refine our neural surface representation beyond coarse geometry alignment, we employ an inverse rendering strategy based on rasterization.  
+This approach allows us to optimize the appearance of the predicted surface to match the visual characteristics of the target data directly.  
+
+Rather than relying on geometric proximity measures such as Chamfer distance or signed distance field (SDF) queries, which are often sensitive to sampling density and noise—our method leverages appearance-based supervision.  
+This has proven more stable and effective, especially in complex regions with fine-scale details or partial visibility.  
+
+At the heart of our optimization process lies a differentiable rasterizer that compares rendered images of the current mesh to the target observations from multiple viewpoints.  
+This enables the computation of meaningful gradients that can be propagated back through the rendering pipeline.  
+
+To further stabilize the training and encourage convergence, we adopt a coarse-to-fine optimization schedule.  
+Starting with a lower tessellation resolution $k$, we progressively increase the sampling density, allowing the network to first capture global shape and then refine local details.  
+
+At a fixed tessellation level $k$, the resulting mesh $M$ has a constant connectivity, defined by a regular triangulation of the sampled patch grid.  
+Crucially, the vertex positions of this mesh are differentiable with respect to:
+\begin{itemize}
+    \item the patch corner positions $V$,
+    \item the feature vectors $F$,
+    \item and the neural deformation parameters $\theta$ of $\text{MLP}_\theta$.
+\end{itemize}
+
+This differentiability ensures that the inverse rendering pipeline produces useful and stable gradients, enabling the joint optimization of geometry and appearance.  
+In this way, our method not only recovers high-quality surfaces but also aligns their rendered appearance with the target imagery, leading to visually and geometrically accurate reconstructions.  
