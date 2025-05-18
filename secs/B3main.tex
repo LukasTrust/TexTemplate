@@ -139,40 +139,34 @@ The complete set of mesh vertices and their associated features is defined as:
 These values are bilinearly interpolated across each patch and serve as input for the subsequent neural deformation stage.  
 The surface layout defined in this step provides a structured yet flexible representation that supports efficient learning and reconstruction.  
 
-The following section describes how this patch-based representation is used to generate detailed geometry through a neural deformation model, including the role of tessellation, feature encoding, and the architecture of the MLP.  
+The following section describes how this patch-based representation is used to generate detailed geometry through a neural deformation model, including the role of tessellation, feature encoding and the architecture of the MLP.  
 
 
 
 
 
-\subsection{Mesh Extraction from Neural Geometry Fields}
+\subsection{Patch-Based Sampling and Feature Encoding}
 
-Building on the structured base mesh and a learned per-patch feature field, Sivaram et al.\ propose a neural surface deformation framework that reconstructs high-fidelity geometry by predicting local displacements.  
-Each point $u \in [0,1]^2$ within a patch domain is mapped through a learned displacement field computed by a multi-layer perceptron ($\text{MLP}_\theta$), conditioned on both geometry and semantic features.  
+Building on the quadrilateral patch structure introduced before, Sivaram et al.\ develop a neural representation that enables fine-grained geometry reconstruction over this base mesh.
+Each patch, defined as a bilinear map from the unit square $[0,1]^2$ to a region on the simplified surface, provides a consistent local domain for both geometric interpolation and neural processing.
 
+To capture detailed shape variations across the surface, the method samples a dense grid of points within each patch.
+A regular $k \times k$ grid is overlaid on the unit square domain, producing a set of parametric coordinates $u_{ij} \in [0,1]^2$ for $i,j \in \{0,\ldots,k-1\}$.
+These samples form the foundation for evaluating both geometry and features across the patch.
 
+At each sample location $u_{ij}$, two quantities are computed: 
 
+\quad $\bullet$ The 3D position $\sigma(u_{ij})$,
 
+\quad $\bullet$ The interpolated feature vector $\Psi(u_{ij})$.
 
-\subsubsection{Patch-Based Sampling and Feature Encoding}
+To enable the network to learn surface deformations, the sampled geometry and feature values are transformed through a high-frequency positional encoding~\cite{mildenhall2020}.
+Specifically, each input point is encoded as: 
+\[\text{enc}(v,f) = (\sin(2^0 v), \cos(2^0 v), \ldots, \sin(2^L v), \cos(2^L v), f)\]
+where $v = \sigma(u)$, $f = \Psi(u)$ and $L = 8$ defines the number of frequency bands.
+This encoding combines geometric location with semantic features in a form suitable for learning complex local surface variations.
 
-To extract a high-resolution mesh from the learned neural geometry field, Sivaram et al.\ subdivide the surface of the structured base mesh into parametric patches.  
-Each quadrilateral face defines a patch $\sigma$ that maps the unit square domain $[0,1]^2$ onto a corresponding portion of the 3D surface using bilinear interpolation.  
-Within each patch, a regular sampling grid of resolution $k \times k$ is established, creating a set of 2D coordinates $u_{ij} \in [0,1]^2$, where $i,j \in \{0, \ldots, k-1\}$.  
-
-Within each patch, a regular $k \times k$ sampling grid is defined, producing 2D coordinates $u_{ij} \in [0,1]^2$, where $i,j \in \{0,\ldots,k-1\}$.  
-For each sample $u_{ij}$, two interpolations are performed:  
-\begin{enumerate}
-    \item The base 3D position $\sigma(u_{ij})$,  
-    \item The interpolated feature vector $\Psi(u_{ij})$.
-\end{enumerate}
-
-To capture fine-scale surface details, each MLP input includes a high-frequency positional encoding of the 3D position $v = \sigma(u)$ and the feature vector $f = \Psi(u)$.  
-This encoding is defined as:  
-\[\text{enc}(v, f) = (\sin(2^0 v), \cos(2^0 v), \ldots, \sin(2^L v), \cos(2^L v), f) \tag{3}\]  
-where $L$ controls the number of frequency bands, and thereby the positional encoding resolution.  
-This concatenated representation combines geometric and semantic information in a form well-suited for learning complex surface deformations~\cite{mildenhall2020nerf}.  
-Sivaram et al.\ set $L = 8$ in their configuration.  
+The result is a structured and differentiable input representation that supports the subsequent neural deformation process.
 \begin{figure}[ht]
   \centering
   \begin{adjustbox}{center}
@@ -232,10 +226,10 @@ Sivaram et al.\ set $L = 8$ in their configuration.
 
 \subsubsection{Neural Surface Deformation with MLP}
 
-The displacement of a point $u \in [0,1]^2$ on patch $\sigma$ is computed via the MLP applied to the encoded position and features.  
-The final deformed position $\Lambda(u)$ is given by:  
-\[\Lambda(\mathbf{u}) = \sigma(\mathbf{u}) + \text{MLP}_\theta \circ \text{enc}(\sigma(\mathbf{u}), \Psi(\mathbf{u})) \tag{4}\]
-This formulation enables local, learned deformations of the base mesh, capturing geometric details beyond the coarse patch approximation.  
+Surface reconstruction is achieved by predicting local displacements using an MLP, which is conditioned on encoded geometric and feature information.
+The deformed 3D point $\Lambda(u)$ is computed as:
+\[\Lambda(u) = \sigma(u) + \text{MLP}_{\theta}(\text{enc}(\sigma(u), \Psi(u)))\]
+This enables each point on the base mesh to undergo a locally adaptive deformation, refining the coarse patch approximation to recover high-fidelity geometry.
 
 
 
@@ -243,20 +237,20 @@ This formulation enables local, learned deformations of the base mesh, capturing
 
 \subsubsection{Objective Function}
 
-In contrast to conventional inverse rendering pipelines that rely solely on image-based supervision, our method benefits from direct access to attributes of the reference geometry. 
-Among these, we utilize surface normal vectors as a reliable signal for guiding local shape reconstruction. 
-Given the deformed surface produced by the neural deformation function $\Lambda(u)$, we evaluate differentiable vertex normals on the sampled mesh using standard geometric operations, specifically, cross products of adjacent triangle edges. 
-During rasterization, these per-vertex normals are interpolated across fragments to produce normal vector frame buffers $N(\cdot)$ for both the reference surface $\Gamma$ and the predicted surface $\Sigma$. 
-Using these buffers, we define an image-space normal consistency loss that measures the per-pixel alignment between predicted and reference normals: 
-\begin{equation} L = \frac{1}{|N(\cdot)|} \|N(\Gamma) - N(\Sigma)\|_1 + \frac{1}{|V|} \|L_V\|_1 \end{equation} 
-This loss term enforces local geometric agreement in appearance and orientation, encouraging the network to reproduce surface detail. 
-To promote a smooth and uniform distribution of vertices across the surface, we include a Laplacian smoothness term, defined as: 
-\begin{equation} L_{\text{normal}} = \frac{1}{|N(\cdot)|} \|L_V\|_1 \end{equation} 
-Where $L$ is the uniform mesh Laplacian operator applied to the set of uniformly sampled vertices $V$. 
-This term regularizes the deformation by penalizing irregular local configurations, helping to avoid artifacts such as vertex clustering or excessive warping. 
-The total objective function combines both terms: 
-\begin{equation} L = L_{\text{normal}} + L_{\text{laplacian}} \end{equation} 
-This unified formulation balances geometric accuracy with structural regularity, serving as the primary supervisory signal during training.
+Unlike traditional pipelines that rely solely on image supervision, this method also utilizes ground truth geometric information — specifically, surface normal as a guiding signal.
+Vertex normals are computed on the predicted mesh using cross products of adjacent triangle edges.
+During differentiable rasterization, these per-vertex normals are interpolated across pixels to produce normal buffers for both the predicted surface $\Sigma$ and the reference surface $\Gamma$.
+The image-space normal consistency loss is then defined as:
+\[\mathcal{L}_{\text{normal}} = \frac{1}{|\mathcal{N}(\cdot)|} \left\| \mathcal{N}(\Gamma) - \mathcal{N}(\Sigma) \right\|_1\]
+
+To promote smooth, uniform geometry and prevent artifacts like vertex clustering, a Laplacian regularization term is added:
+\[\mathcal{L}_{\text{laplacian}} = \frac{1}{|V|} \left\| \mathcal{L}_V \right\|_1\]
+where $\mathcal{L}$ is the uniform mesh Laplacian operator applied to the set of sampled vertices $V$.
+
+The total loss function is:
+\[\mathcal{L}_{\text{total}} = \mathcal{L}_{\text{normal}} + \mathcal{L}_{\text{laplacian}}\]
+
+This formulation encourages the reconstructed mesh to be both visually accurate and structurally regular.
 
 
 
@@ -264,20 +258,19 @@ This unified formulation balances geometric accuracy with structural regularity,
 
 \subsubsection{Jittered Sampling for Detail and Regularization}
 
-To enhance surface detail and improve gradient flow during training, Sivaram et al.\ introduce a jittering strategy, which slightly randomizes the sampling positions within each patch.  
-Normally, sampling would occur on a perfectly regular grid across the surface, meaning each sampled point lies at a predictable, evenly spaced coordinate (e.g., every $1/10$th of the patch width).  
-However, such uniform sampling can lead to aliasing artifacts and limited expressiveness, especially when the surface has fine-grained or high-frequency geometric details.  
+To enhance surface detail and training stability, Sivaram et al.\ employ jittered sampling, perturbing grid points within each patch.
+While regular sampling places samples at evenly spaced positions $\hat{u} = \langle i,j \rangle / (k - 1)$, this uniformity can cause aliasing and oversmoothing, especially on high-frequency geometry.
 
-To address this, the authors perturb each interior sample point (i.e., points not lying on the patch boundary) by a small random offset.  
-More specifically, each 2D point $u \in [0,1]^2$ is randomly shifted by a vector drawn from a uniform distribution over a small disk of radius $\omega$.  
-This is written as $u \sim u + D(\omega)$, where $D(\omega)$ represents a uniform sampling over a disk centered at the origin.  
-Visually, instead of forming a rigid grid, the sample points become slightly ``noisy,'' helping the model to better generalize and learn fine surface variations.  
+To address this, interior sample points are offset by small, random perturbations from a disk-shaped distribution:
+\[u \sim \hat{u} + D(\omega)\]
+where $D(\omega)$ samples uniformly from a disk of radius $\omega$, introducing local variation while preserving patch structure.
 
-Importantly, the jitter radius $\omega$ is kept small (less than half the grid spacing, $\omega < 0.5k^{-1}$) to avoid triangle fold-overs, a common issue in mesh generation where triangle edges cross over each other, causing rendering artifacts and invalid geometry.  
-Additionally, to preserve seamless boundaries between neighboring patches, boundary samples are left untouched (i.e., $\omega=0$ at the edges), ensuring that patch edges still align precisely.  
+To ensure mesh consistency: 
 
-This jittering acts as a form of regularization, helping the model to avoid overfitting to a rigid sampling pattern and instead learn a smoother and more flexible deformation field.  
-It also encourages robustness in surface prediction, particularly in low-resolution cases, where sparse sampling would otherwise miss subtle details.  
+\quad $\bullet$ Boundary points are not jittered ($\omega = 0$) to preserve alignment between adjacent patches.
+
+\quad $\bullet$ The jitter radius $\omega$ is constrained: $\omega < \frac{0.5}{k - 1}$, preventing triangle fold-overs or inversions.
+
 \begin{figure}[ht]
   \centering
   \begin{adjustbox}{center}
@@ -370,10 +363,13 @@ It also encourages robustness in surface prediction, particularly in low-resolut
 
   \end{tikzpicture}
   \end{adjustbox}
-  \caption{Progression from an irregular triangle mesh (a) to a regular sampling grid (b), jittered sampling within grid cells (c), and finally applying jittered sampling within a more complex field (d).}
+  \caption{Progression from an irregular triangle mesh (a) to a regular sampling grid (b), jittered sampling within grid cells (c) and finally applying jittered sampling within a more complex field (d).}
   \label{fig:progression_sampling}
 \end{figure}
 
+This stochastic sampling improves generalization by preventing overfitting to a fixed grid layout.
+It encourages smoother deformations and higher robustness, particularly in low-resolution regimes where fewer samples may otherwise miss fine geometric details.
+As shown in Figure 4, jittered sampling yields cleaner, more accurate reconstructions compared to regular sampling.
 
 
 
@@ -381,33 +377,24 @@ It also encourages robustness in surface prediction, particularly in low-resolut
 
 \subsubsection{Mesh Construction and Differentiable Training}
 
-Once the displaced 3D positions for all sample points have been computed using the MLP, the mesh is constructed by triangulating the sampled grid.  
-Specifically, the $k \times k$ sampling grid within each patch defines $(k-1)^2$ square cells (quads), each of which is split into two triangles in a consistent pattern, similar to how elevation maps are converted into triangle meshes (often called height fields).  
-Since each patch follows the same sampling and triangulation logic, and boundary points are shared consistently, the resulting mesh is semi-regular and coherent across patches, forming a watertight and well-structured surface.  
+Once deformed 3D positions are computed via the MLP, the mesh is formed by triangulating the $k \times k$ sampling grid within each patch.
+Each square cell is split into two triangles in a consistent pattern, producing a semi-regular, watertight surface due to shared boundary vertices and uniform sampling logic.
 
-The MLP used by Sivaram and colleagues consists of two hidden layers with 64 neurons each and uses activation functions not explicitly specified by the authors.  
-These functions introduce the non-linearities necessary for modeling complex deformation patterns, but their exact form is not detailed in the original description.  
-Both the network parameters $\theta$ and the per-vertex feature vectors are optimized jointly during training.  
+The neural deformation network consists of an MLP with two hidden layers of 64 units each.
+While the activation functions are not specified, they introduce the non-linearity required for complex deformations.
+Both the MLP weights $\theta$ and the per-vertex feature vectors are optimized jointly.
 
-The training pipeline incorporates differentiable rendering using \texttt{NVDIFFRAST}, a GPU-accelerated rasterizer specifically designed for gradient-based optimization of 3D geometry and appearance~\cite{niemeyer2020}.  
-Unlike traditional rendering methods, which are inherently non-differentiable and unsuitable for gradient-based learning, differentiable rendering allows loss gradients from image space to flow back into the 3D mesh and feature representations.  
-This capability enables the system to iteratively update both geometry and per-patch features, improving alignment between the rendered outputs and the multi-view image supervision~\cite{kato2020}.  
+Training leverages differentiable rendering via NVDIFFRAST~\cite{niemeyer2020}, enabling image-space gradients to flow back to both geometry and features.
+This gradient-based feedback from multi-view supervision allows the model to iteratively refine the reconstructed surface.
 
-To supervise this optimization process, the model relies on multi-view images, which are 2D projections of the object captured from various angles.  
-These views serve as a comprehensive set of visual observations that constrain the reconstruction.  
-Specifically, the 3D surface is rendered from 200 virtual camera viewpoints that simulate the perspectives from which the object could be observed.  
-The camera viewpoints are uniformly distributed around the object to ensure comprehensive angular coverage, allowing the model to observe and reconstruct surface details from every side.  
-This is essential for achieving a reconstruction that is geometrically accurate and consistent from every direction.  
+To provide dense supervision, the model is rendered from 200 virtual viewpoints distributed uniformly around the object.
+Each view is rendered with three depth layers per pixel to handle occlusions and transparency effects.
+Views are processed in batches of 10 to balance memory and performance.
 
-For efficiency and improved training dynamics, these views are grouped into batches of 10, with each view incorporating three depth layers per pixel.  
-This multi-layer rendering helps capture partial occlusions and complex visibility effects, such as surfaces seen through transparent or semi-transparent regions.  
-By doing so, the model can reason more accurately about the 3D structure and avoid artifacts caused by occluded or ambiguous regions~\cite{burggraaff2018}.  
+Optimization uses the Adam optimizer~\cite{kingma2017} with a fixed learning rate of $10^{-3}$, providing stable convergence.
+Adam adaptively adjusts learning rates per parameter, accelerating training while mitigating instability.
 
-This comprehensive setup, combining differentiable rendering, multi-view supervision, and visibility-aware optimization, allows the learning algorithm to reconstruct detailed and consistent surface geometry.  
-Optimization is performed using the Adam optimizer with a fixed learning rate of $10^{-3}$, providing a stable update mechanism for both the mesh deformation network and the associated feature vectors.  
-The Adam optimizer is an adaptive method that adjusts the learning rate for each parameter based on the first and second moments of the gradients.  
-This allows the optimizer to adaptively correct the learning rates during training, accelerating convergence while avoiding large, unstable updates.  
-The fixed learning rate ensures stability during training, while the adaptive nature of Adam helps the model learn more efficiently from the gradients provided by the differentiable rendering process~\cite{kingma2017}.  
+Together, this setup enables the joint optimization of geometry and features through appearance-based supervision, yielding highly detailed and consistent 3D reconstructions.
 
 
 
@@ -415,25 +402,280 @@ The fixed learning rate ensures stability during training, while the adaptive na
 
 \subsubsection{Inverse Rendering}
 
-To refine our neural surface representation beyond coarse geometry alignment, we employ an inverse rendering strategy based on rasterization.  
-This approach allows us to optimize the appearance of the predicted surface to match the visual characteristics of the target data directly.  
+To refine the reconstructed geometry beyond coarse alignment, the method employs an inverse rendering strategy based on differentiable rasterization.
+Rather than relying on geometric proximity metrics like Chamfer distance or signed distance fields, which are sensitive to noise and sampling density, this approach leverages appearance-based supervision from multi-view imagery.
 
-Rather than relying on geometric proximity measures such as Chamfer distance or signed distance field (SDF) queries, which are often sensitive to sampling density and noise—our method leverages appearance-based supervision.  
-This has proven more stable and effective, especially in complex regions with fine-scale details or partial visibility.  
+A differentiable rasterizer compares rendered images of the predicted mesh to the target observations.
+The resulting gradients propagate through the rendering pipeline, enabling optimization of both geometry and appearance.
+This process improves fidelity in visually complex or partially occluded regions where traditional geometry-based losses are less effective.
 
-At the heart of our optimization process lies a differentiable rasterizer that compares rendered images of the current mesh to the target observations from multiple viewpoints.  
-This enables the computation of meaningful gradients that can be propagated back through the rendering pipeline.  
+Training follows a coarse-to-fine optimization schedule.
+Starting with a low tessellation resolution $k \times k$, the model progressively increases sampling density, first capturing global shape and then refining local detail.
+At each resolution, the mesh $M$ has fixed connectivity defined by the regular triangulation of the sampled patch grid.
 
-To further stabilize the training and encourage convergence, we adopt a coarse-to-fine optimization schedule.  
-Starting with a lower tessellation resolution $k$, we progressively increase the sampling density, allowing the network to first capture global shape and then refine local details.  
+Crucially, the vertex positions of $M$ are differentiable with respect to: 
 
-At a fixed tessellation level $k$, the resulting mesh $M$ has a constant connectivity, defined by a regular triangulation of the sampled patch grid.  
-Crucially, the vertex positions of this mesh are differentiable with respect to:
-\begin{itemize}
-    \item the patch corner positions $V$,
-    \item the feature vectors $F$,
-    \item and the neural deformation parameters $\theta$ of $\text{MLP}_\theta$.
-\end{itemize}
+\quad $\bullet$ The patch corner positions $V$,
 
-This differentiability ensures that the inverse rendering pipeline produces useful and stable gradients, enabling the joint optimization of geometry and appearance.  
-In this way, our method not only recovers high-quality surfaces but also aligns their rendered appearance with the target imagery, leading to visually and geometrically accurate reconstructions.  
+\quad $\bullet$ The per-vertex feature vectors $F$,
+
+\quad $\bullet$ The deformation network parameters $\theta$.
+
+This full differentiability ensures meaningful gradients throughout the optimization process, enabling joint refinement of shape and appearance.
+
+By integrating differentiable rasterization with multi-view supervision, the model produces reconstructions that are both geometrically accurate and visually consistent, faithfully matching the appearance of the target object from all observed viewpoints.
+
+
+
+
+
+\subsection{Benefits and Limitations of NGFs}
+
+Having established the foundational principles, architecture and operational mechanisms of Neural Geometry Fields (NGFs), we now turn to a critical evaluation of their practical impact. 
+Understanding both the strengths and limitations of NGFs is essential for assessing their suitability across diverse applications in 3D representation, reconstruction and rendering. 
+This section presents a balanced examination of NGFs' capabilities and constraints, offering insights into their real-world performance, flexibility and areas where further research is warranted. 
+By identifying what NGFs do well and where they fall short, we contextualize their role within the broader landscape of neural implicit methods and geometry processing techniques. 
+
+\subsubsection{Benefits of NGFs}
+
+NGFs introduce a range of technical and practical advantages that distinguish them from traditional and hybrid 3D representation methods. 
+Their neural implicit formulation allows for compact encoding of intricate geometric details, while patch-based modeling enables flexible adaptation to local surface structure. 
+These properties contribute to enhanced fidelity, improved computational efficiency and seamless integration with differentiable learning frameworks. 
+The subsections below outline key benefits in terms of both representation quality and resource utilization. 
+
+\subsubsection{High Compression with High Fidelity}
+
+A core strength of NGFs lies in their ability to represent complex 3D surfaces using highly compressed data without sacrificing geometric fidelity. 
+NGFs encode surfaces using a combination of a coarse quadrilateral mesh, learned per-patch feature vectors and a compact multi-layer perceptron (MLP) decoder. 
+All components are stored with 32-bit precision. 
+Even for detailed models comprising up to 2,500 patches, the total storage typically remains under 1\,MB, with many models requiring only 300--500\,KB. 
+This yields compression ratios of up to 50$\times$ compared to standard mesh formats. 
+
+High compression is advantageous for several reasons: 
+
+\textbf{Storage Efficiency:} In resource-constrained environments such as mobile devices, embedded systems, or large-scale 3D repositories, storage space is a limiting factor. 
+NGFs significantly reduce the memory footprint, enabling efficient archival, transmission and deployment of high-quality 3D assets. 
+
+\textbf{Bandwidth Reduction:} In cloud-based applications such as streaming 3D content, AR/VR, or telepresence, lower data sizes translate directly into reduced latency and faster loading times. 
+NGFs’ compressed format supports low-bandwidth usage scenarios without compromising visual quality. 
+
+\begin{table}[h]
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Method} & \textbf{Compression Ratio} & \textbf{Storage Size} & \textbf{Chamfer Distance Range} \\
+\hline
+NGF    & Up to 50\,$\times$         & $<$1 MB (e.g., 324 KB) & $\sim$2.5--6.5 \\
+QSlim  & 20--40\,$\times$           & Comparable             & $\sim$6.7--22.6 \\
+Draco  & Up to 30\,$\times$         & 393--601 KB            & Higher than NGF \\
+\hline
+\end{tabular}
+}
+\caption{Compression Comparison (Chamfer Distance × $10^5$)}
+\end{table}
+
+The Symmetric Chamfer Distance is a standard metric for evaluating geometric fidelity in 3D reconstruction. 
+It computes the average distance between each point on the original mesh and its nearest neighbor on the reconstructed mesh and vice versa. 
+Lower values indicate higher similarity. 
+The values shown here are unitless and normalized, typically by the diagonal length of the object’s bounding box. 
+This normalization ensures consistent comparisons across models of different scales. 
+
+\subsubsection{Detailed Reconstruction in Complex Topology}
+
+One of the defining advantages of NGFs is their ability to reconstruct fine geometric detail and preserve complex topological features, even under aggressive compression constraints. 
+Unlike traditional simplification-based methods such as QSlim or learned mesh decimators like nvdiff-modeling, NGFs do not rely on uniform mesh resolution. 
+Instead, they employ a patch-wise implicit representation that adaptively allocates representational capacity based on local surface complexity. 
+
+This adaptivity enables NGFs to maintain high fidelity in challenging regions, including: 
+
+\textbf{High-curvature areas:} Sharp edges, creases and folds are preserved more accurately due to localized feature encoding and decoding. 
+
+\textbf{Self-occluding geometry:} NGFs model intricate self-shadowed regions without introducing topological artifacts, which commonly arise in mesh simplification. 
+
+\textbf{Non-trivial topologies:} Models with high genus (e.g., toroidal or tunnel-like structures) and fine surface features (e.g., dragon scales, hair strands, facial wrinkles) are reconstructed with minimal distortion. 
+
+Quantitatively, NGFs achieve consistently lower reconstruction errors compared to baseline methods under equivalent compression budgets. 
+On benchmark datasets such as Einstein, Ganesha and XYZ, NGFs outperform both QSlim and nvdiff-modeling by 15--30\% in key metrics, including pointwise visual error and normal consistency. 
+
+This robustness to topological complexity makes NGFs particularly well-suited for applications that demand high visual and structural fidelity, such as cultural heritage preservation, 3D scanning and character modeling in digital content creation. 
+
+\subsubsection{Scalability and Resolution Control}
+
+NGFs offer explicit control over geometric resolution through flexible per-patch tessellation, effectively decoupling surface detail from total storage requirements. 
+Each patch can be sampled at a configurable resolution (e.g., grid sizes from $k=4$ to $k=16$), allowing the representation to scale gracefully with computational resources and desired fidelity. 
+
+Empirically, both visual and geometric quality improve with increasing tessellation resolution, but plateau at around $k=16$, beyond which further refinement yields diminishing returns. 
+This behavior allows NGFs to avoid unnecessary computational overhead while still achieving high-quality reconstructions. 
+
+\begin{table}[h]
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lccc}
+\toprule
+\textbf{Configuration} & \textbf{Patches} & \textbf{Chamfer $\times 10^5$} & \textbf{Rendering Error $\times 10^{-3}$} \\
+\midrule
+NGF (2.5K patches)   & 2,500   & $\sim$1.55  & $\sim$1.66 \\
+QSlim (19K tris)     & 19,000  & $\sim$16.30 & $\sim$8.21 \\
+Nvdiffmodeling (19K) & 19,000  & $\sim$21.37 & $\sim$11.46 \\
+\bottomrule
+\end{tabular}
+}
+\caption{Storage vs. Visual Quality (Ganesha Model)}
+\end{table}
+
+These results demonstrate that NGFs can achieve superior visual fidelity with significantly fewer primitives. 
+Even at lower patch counts (e.g., 1,000 patches with 20-dimensional features), NGFs closely approximate the geometry of full-resolution surfaces while keeping storage below 200\,KB. 
+This scalability makes NGFs adaptable to a wide range of use cases, from low-latency visualization to high-quality offline rendering. 
+
+The ability to dynamically trade off resolution, storage and quality without retraining the model or altering mesh topology is a key advantage, especially in real-time systems and multi-resolution pipelines. 
+
+\subsubsection{Seam Continuity Across Patches}
+
+A common drawback of traditional UV-chart atlases and geometry image-based representations is the presence of visible seams at chart boundaries, particularly when high-frequency encodings such as Fourier features are applied. 
+These discontinuities often manifest as shading artifacts and visual inconsistencies across surface patches. 
+
+NGFs mitigate seam artifacts through two key architectural choices: 
+
+\textbf{Shared decoder weights} across all patches, ensuring consistent decoding behavior at boundaries. 
+
+\textbf{Structured coordinate-based interpolation} over the normalized $[0,1]^2$ domain, which maintains smoothness across adjacent patch parameterizations. 
+
+Together, these design elements promote global coherence and local continuity, resulting in significantly fewer visible seams than those found in neural hybrid atlases or geometry images. 
+Qualitative comparisons reveal clear improvements in visual smoothness and shading consistency, underscoring the benefits of NGF’s seam-aware formulation. 
+
+\subsubsection{Differentiable and Optimizable}
+
+NGFs are inherently differentiable, making them especially well-suited for modern inverse graphics and learning-based optimization pipelines. 
+Their neural implicit structure enables gradient-based learning across all stages of the rendering process, including geometry, shading and viewpoint. 
+
+In practice, NGFs are optimized via inverse rendering using supervision from multi-view photometric consistency and surface normals. 
+This supports a range of learning objectives, including: 
+
+\textbf{Neural inverse graphics:} where geometry is inferred from images or videos. 
+
+\textbf{Photometric training with novel view synthesis:} enabling NGFs to learn appearance-aware geometry. 
+
+\textbf{Joint optimization of geometry, appearance and camera pose:} facilitating end-to-end scene reconstruction. 
+
+Unlike traditional mesh compression formats such as QSlim or Draco—which are non-differentiable and fixed at inference—NGFs can be fine-tuned directly from image supervision. 
+This allows the representation to adapt dynamically during training, enhancing shape detail, correcting errors, or aligning to specific views. 
+Such flexibility is critical for tasks where data-driven refinement is essential. 
+
+\subsubsection{Efficient Real-Time Extraction}
+
+Although NGFs are based on neural representations, they are designed for practical runtime performance, enabling fast mesh extraction and efficient training. 
+This makes them suitable not only for offline reconstruction tasks but also for interactive applications. 
+
+Key performance metrics include: 
+
+\textbf{Fast mesh extraction:} Under a full configuration (2,500 patches, grid resolution $k=16$), NGFs generate a full-resolution mesh in under 1 second on an NVIDIA RTX 2080 Ti, supporting near real-time feedback. 
+
+\textbf{Lightweight training:} A complete NGF model can be trained in approximately 12 minutes, enabling rapid prototyping and on-device retraining in practical workflows. 
+
+\textbf{Significant speedup over implicit SDFs:} NGFs are 10--100$\times$ faster than traditional implicit Signed Distance Function (SDF) methods that rely on marching cubes for surface extraction. 
+This is due to NGFs’ patch-based structure, which allows direct surface decoding without global isosurface queries. 
+
+These performance characteristics position NGFs as a practical representation for AR/VR, interactive 3D editing, remote rendering and real-time visualization pipelines. 
+Their ability to deliver high-fidelity surfaces with low latency makes them especially attractive in user-facing scenarios where responsiveness and quality are both essential. 
+
+\subsection{Limitations of NGFs}
+
+Despite their numerous advantages, Neural Geometry Fields (NGFs) exhibit several limitations that constrain their current applicability. 
+These challenges stem primarily from architectural choices—such as patch-based modeling and the use of neural decoders—which, while powerful, introduce trade-offs in terms of generalization, preprocessing requirements and flexibility. 
+
+It is important to emphasize that these limitations do not negate the value of NGFs; rather, they delineate areas for improvement and highlight key directions for future research. 
+The following subsections provide a detailed examination of these constraints, with the goal of offering a nuanced understanding of the method’s practical boundaries. 
+
+\subsubsection{Sensitivity to Patch Layout}
+
+NGFs fundamentally rely on a quadrilateral patch decomposition of the surface, where each patch serves as a 2D parametric domain for neural decoding. 
+The quality and regularity of this patch layout significantly affect reconstruction fidelity and learning dynamics. 
+
+Key challenges include: 
+
+\textbf{Distorted or irregular patches:} When patches exhibit strong aspect ratio imbalances, sharp bends, or non-uniform sampling, the learning of accurate displacement functions becomes more difficult. 
+This often leads to localized reconstruction errors or artifacts, particularly near patch boundaries or in regions with high curvature. 
+
+\textbf{Dependence on high-quality quadrangulation:} Unlike mesh-based methods such as QSlim or Draco, which operate directly on arbitrary triangle meshes, NGFs require a clean and well-structured quadrilateral base mesh. 
+Generating such a mesh typically involves remeshing or manual preprocessing steps, which can be computationally expensive or domain-specific. 
+
+This sensitivity introduces a bottleneck in fully automated pipelines, as robust quadrangulation remains an open problem, particularly for noisy or low-quality scans. 
+Consequently, NGFs are currently best suited for settings where a reliable patch layout can be obtained or where some preprocessing is acceptable. 
+
+\subsubsection{Pipeline Complexity and Technical Overhead}
+
+The NGF framework requires a multi-stage pipeline that integrates traditional geometry processing with neural optimization, resulting in increased technical complexity compared to simpler mesh-based or purely implicit representations. 
+
+Key stages include: 
+
+\textbf{Mesh simplification and quadrangulation}, to produce a suitable base mesh for patch construction. 
+
+\textbf{Patch sampling and feature initialization}, involving spatially structured interpolation and the definition of local coordinate systems. 
+
+\textbf{Neural training of the patch-wise decoder}, which typically requires scene-specific supervision, GPU acceleration and non-trivial hyperparameter tuning. 
+
+Each stage introduces additional design decisions and potential failure points. 
+For example, selecting the number of patches, feature dimensionality, or decoder architecture directly affects reconstruction quality and training stability. 
+Moreover, the pipeline often requires customization for different object classes or scan modalities, limiting its plug-and-play usability. 
+
+While these steps are manageable in research or controlled environments, they may pose a barrier in large-scale or real-time systems where minimal preprocessing and generalizability are crucial. 
+
+\subsubsection{Trade-Off Between Scalability and Resolution}
+
+Although NGFs support arbitrary resolution during inference by adjusting the tessellation level within each patch (e.g., from $k = 4$ up to $k = 32$), practical benefits taper off beyond a certain point. 
+Empirical evaluations show that: 
+
+\textbf{Visual and geometric quality saturates} around $k = 16$, after which finer sampling provides only marginal improvements. 
+\textbf{Computational and memory costs increase} with higher tessellation, leading to diminishing returns in both speed and perceptual fidelity. 
+
+This trade-off places a soft upper bound on the resolution scalability of NGFs. 
+In high-performance or resource-constrained environments, aggressive upsampling may not be justifiable given the minimal perceptual gains. 
+
+Nonetheless, NGFs still offer a more flexible alternative to fixed-resolution mesh formats by allowing resolution control at inference time, thereby eliminating the need for precomputed levels of detail (LODs). 
+This capability is especially useful in streaming or adaptive rendering contexts, where resource budgets can fluctuate dynamically. 
+
+\subsubsection{Limited Topological Flexibility}
+
+NGFs are fundamentally tied to the structure of a predefined quadrilateral base mesh, making them a semi-explicit representation. 
+While this design enables efficient decoding and controlled surface parameterization, it also imposes topological constraints. 
+
+\textbf{Lack of support for arbitrary topology:} Unlike fully implicit methods such as SDFs or NeRFs, NGFs cannot naturally model dynamic topology changes, such as the appearance or disappearance of holes, disconnected components, or surface splits. 
+
+\textbf{Remeshing dependency:} When the target geometry differs significantly in topology from the base mesh, remeshing or manual intervention is required to maintain consistency, adding preprocessing overhead. 
+
+As a result, NGFs are less suitable for tasks involving topology-agnostic modeling, such as dynamic scenes or non-manifold reconstruction. 
+While their efficiency and compactness remain valuable, these advantages come at the cost of reduced topological generality. 
+
+\subsubsection{Training Time and Non-Interactive Optimization}
+
+Although NGFs are considerably faster to train than traditional implicit fields (e.g., NeRFs or SDFs), their optimization process is still non-instantaneous and may not meet the latency requirements of interactive applications. 
+
+\begin{table}[h]
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lccc}
+\toprule
+\textbf{Patches} & \textbf{Resolution (k)} & \textbf{Extraction Time (ms)} & \textbf{Training Time (min)} \\
+\midrule
+2,500 & 16 & 21.22 & $\sim$12 \\
+\bottomrule
+\end{tabular}
+}
+\caption{NGF Training and Inference Time (on RTX 2080 Ti)}
+\end{table}
+
+While these numbers reflect efficient training for a neural method, they are still orders of magnitude slower than conventional mesh compression tools like QSlim or Draco, which can operate in milliseconds without learning. 
+This makes NGFs less suited for real-time compression workflows, such as live streaming, in-browser rendering, or responsive 3D editing pipelines. 
+
+\subsubsection{Potential for Boundary Artifacts}
+
+Despite architectural mechanisms designed to encourage continuity across patch boundaries, NGFs may still exhibit visible artifacts at seams, particularly under suboptimal training conditions. 
+
+Contributing factors include: 
+
+\textbf{Patch misalignment or geometric inconsistency}, which can hinder smooth interpolation between neighboring patches. 
+\textbf{Insufficient regularization}, such as lack of continuity-aware loss terms or smoothness priors, which may allow neural decoders to diverge at boundaries. 
+
+These artifacts are typically more pronounced in high-frequency regions or under minimal supervision. 
+While NGFs significantly reduce seam-related issues compared to UV atlases or geometry images, robust boundary handling remains an active area for improvement, especially in settings requiring high visual fidelity. 

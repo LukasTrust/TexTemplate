@@ -1,60 +1,34 @@
-%\definecolor{customgreen}{HTML}{82B366}
-%\definecolor{customblue}{HTML}{6C8EBF}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc}
+\tikzset{
+  input/.style = {rectangle, draw=blue!70, fill=blue!10, thick, minimum height=1.2cm, minimum width=3.2cm},
+  process/.style = {rectangle, draw=green!60!black, fill=green!10, thick, minimum height=1.2cm, minimum width=3.2cm},
+  output/.style = {rectangle, draw=red!70, fill=red!10, thick, minimum height=1.2cm, minimum width=3.4cm},
+  arrow/.style = {thick, -{Latex[length=3mm]}}
+}
 
-%\def\svgwidth{\textwidth}
-%\includesvg[inkscapelatex=true]{figs/Diagram2}
-% \centering
-% \caption{Diagram caption}
-% \label{fig:teaser}
-% Add the legend below the diagram
-%\begin{tikzpicture}
-%    % Green square for "Choose one"
-%    \node[fill=customgreen, minimum size=10pt, anchor=west] (green) at (0, 0) {};
-%    \node[anchor=west] at (0.3, 0) {Choose one path};
-
-    % Blue square for "Need all paths"
-%    \node[fill=customblue, minimum size=10pt, anchor=west] (blue) at (0, -0.6) {};
-%    \node[anchor=west] at (0.3, -0.6) {Need all paths};
-%  \end{tikzpicture}
-
-\usetikzlibrary{arrows.meta, positioning}
 \centering
-\begin{tikzpicture}[
-  node distance=0.8cm and 2cm,
-  font=\small,
-  stage/.style={
-    rectangle, rounded corners=3pt, draw=black, thick,
-    text width=4cm, minimum height=1cm, align=center, fill=blue!10
-  },
-  substep/.style={
-    rectangle, draw=gray!70, thick, text width=3.8cm,
-    minimum height=0.6cm, align=left, fill=gray!10
-  },
-  arrow/.style={thick, ->, >=Stealth}
-]
+  \begin{tikzpicture}[node distance=1cm and 1cm]
 
-% Stage 1
-\node (stage1) [stage] {Surface Partitioning};
-\node (s1a) [substep, below=0.15cm of stage1] {• Merging adjacent triangles};
-\node (s1b) [substep, below=0.1cm of s1a] {• Define interpolation domain};
+    % First row: one process + two input nodes
+    \node[process] (partition) at (0,0) {Patch Partitioning};
+    \node[input, right=of partition] (quadmesh) {Quad Mesh};
+    \node[input, right=of quadmesh] (featurefield) {Feature Field};
 
-% Stage 2
-\node (stage2) [stage, right=of stage1] {MLP};
-\node (s2a) [substep, below=0.15cm of stage2] {• Sampling parameter $u$};
-\node (s2b) [substep, below=0.1cm of s2a] {• Generate connectivity};
-\node (s2c) [substep, below=0.1cm of s2b] {• Apply jittering};
+    % Second row: three output nodes
+    \node[input, below=2cm of partition] (sampling) {Sampling};
+    \node[output, right=of sampling] (mlp) {MLP Deformation};
+    \node[output, right=of mlp] (render) {Output Mesh};
 
-% Stage 3
-\node (stage3) [stage, right=of stage2] {Optimization};
-\node (s3a) [substep, below=0.15cm of stage3] {• Inverse rendering};
-\node (s3b) [substep, below=0.1cm of s3a] {• Define objective function};
-\node (s3c) [substep, below=0.1cm of s3b] {• Camera arrangement};
+    % Arrows top row
+    \draw[arrow] (partition) -- (quadmesh);
+    \draw[arrow] (quadmesh) -- (featurefield);
 
-% Arrows
-\draw [arrow] (stage1) -- (stage2);
-\draw [arrow] (stage2) -- (stage3);
+    % Arrows to second row
+    \draw[arrow] (featurefield.south) -- ++(0,-0.5) -| (sampling.north);
+    \draw[arrow] (sampling) -- (mlp);
+    \draw[arrow] (mlp) -- (render);
 
-\end{tikzpicture}
-\vspace{-0.5em}
-\caption{Overview of the proposed method: Surface Partitioning, followed by MLP-based modeling, and final optimization via inverse rendering.}
+  \end{tikzpicture}
+  \vspace{-0.5em}
+  \caption{Schematic of the processing pipeline. The input data undergoes patch partitioning and mesh structuring, followed by feature extraction. These are further processed through sampling and deformation stages to produce the final output mesh.}
 \label{fig:teaser}
