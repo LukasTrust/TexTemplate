@@ -32,7 +32,7 @@ This formulation allows smooth interpolation between shapes in the learned laten
 In parallel, Occupancy Networks propose a related but distinct approach.  
 Rather than predicting signed distances, Occupancy Networks model the occupancy probability of each point in 3D space.  
 Which means, the likelihood that a given point resides inside the object's volume.  
-This occupancy function is parameterized by a Multilayer Perceptron, a type of fully connected neural network that maps 3D coordinates (and optionally conditional information, such as a latent code) directly to scalar occupancy values between 0 and 1.  
+This occupancy function is parameterized by a Multi-Layer Perceptron, a type of fully connected neural network that maps 3D coordinates (and optionally conditional information, such as a latent code) directly to scalar occupancy values between 0 and 1.  
 This continuous probabilistic formulation enables the generation of smooth, high-resolution surfaces without committing to a fixed spatial discretization such as voxels~\cite{mescheder2019}.  
 
 These implicit methods offer several significant advantages.  

@@ -15,13 +15,13 @@ This subsection outlines the architectural and computational factors that contri
 \subsubsection{High-Fidelity Reconstruction Under Extreme Compression}
 
 A core advantage of Neural Geometry Fields is their ability to preserve geometric detail even under strong compression. 
-Unlike conventional simplification techniques, which often degrade surface fidelity, NGFs leverage a hybrid encoding that includes a coarse quad mesh, compact per-patch features, and a shared MLP decoder all stored with 32-bit precision yet typically occupying less than 1 MB. 
+Unlike conventional simplification techniques, which often degrade surface fidelity, NGFs leverage a hybrid encoding that includes a coarse quad mesh, compact per-patch features, and a shared MLP decoder typically occupying less than 1 MB. 
 In practice, most assets are represented with only 300--500 KB of data. 
 
 This efficiency offers clear benefits for storage, transmission, and real-time applications, particularly in bandwidth-constrained environments where loading speed and latency are critical. 
 Crucially, this compression does not come at the cost of visual quality or geometric accuracy. 
 
-Rather than uniformly reducing detail, as done in methods like QSlim or learned mesh decimators (e.g., nvdiff-modeling), NGFs employ a patch-wise implicit scheme that adapts resolution locally. 
+Rather than uniformly reducing detail, as done in methods like QSlim or learned mesh decimators (e.g., Nvdiffmodeling), NGFs employ a patch-wise implicit scheme that adapts resolution locally. 
 This targeted allocation of representational capacity ensures that fine surface structures are preserved where most significant. 
 
 Neural Geometry Fields excel in reconstructing complex surface regions, including:
@@ -49,10 +49,11 @@ Draco  & Up to 30\,$\times$         & 393--601 KB            & $\sim$9.0--25.0 \
 \hline
 \end{tabular}
 }
+\label{tab:compression_comparison}
 \end{table}
 
 Evaluations on standard datasets including \textit{Einstein}, \textit{Ganesha}, and \textit{XYZ} corroborate these findings. 
-NGFs outperform QSlim and nvdiff-modeling by 15--30\% on key metrics such as surface error and normal consistency under identical storage constraints (Sivaram et al., 2024).
+NGFs outperform QSlim and Nvdiffmodeling by 15--30\% on key metrics such as surface error and normal consistency under identical storage constraints \cite{sivaram2024}.
 
 \subsubsection{Scalable Fidelity and Seamless Continuity in Surface Representation}
 
@@ -61,10 +62,10 @@ Each patch in an NGF can be independently tessellated at variable grid resolutio
 
 Quantitative comparisons highlight the compactness and effectiveness of NGFs. 
 As shown in Table~\ref{tab:storage_vs_quality}, NGFs with only 2,500 patches achieve significantly lower Chamfer distances and rendering errors than QSlim and Nvdiffmodeling, despite using an order of magnitude fewer primitives. 
-Even at reduced patch counts (e.g., 1,000 patches), NGFs approximate high-resolution surface geometry with a lightweight memory footprint ($<$200 KB), demonstrating superior storage-efficiency trade-offs (Sivaram et al., 2024, Sec.~4.2, Fig.~9). 
+Even at reduced patch counts (e.g., 1,000 patches), NGFs approximate high-resolution surface geometry with a lightweight memory footprint ($<$200 KB), demonstrating superior storage-efficiency trade-offs \cite{sivaram2024} Fig. 9. 
 
 \begin{table}[h]
-\caption{Storage vs. visual quality on the Ganesha model. Inspired by Sivaram et al. (2024), Table 2 and Fig. 7.}
+\caption{Storage vs. visual quality on the Ganesha model. Inspired by \cite{sivaram2024}, Table 2 and Fig. 7.}
 \centering
 \resizebox{\linewidth}{!}{%
 \begin{tabular}{|l|c|c|c|}
@@ -77,6 +78,7 @@ Nvdiffmodeling (19K) & 19,000  & $\sim$21.37 & $\sim$11.46 \\
 \hline
 \end{tabular}
 }
+\label{tab:storage_vs_quality}
 \end{table}
 
 In addition to resolution scalability, NGFs also mitigate a common challenge in patch-based representations, which are visible seams at patch boundaries. 
@@ -84,7 +86,7 @@ In geometry images and multichart neural atlases, discontinuities often arise fr
 
 NGFs address this limitation through two architectural innovations:
 \begin{itemize}
-    \item \textbf{Shared decoder across patches:} A single multi-layer perceptron is used to decode features from all patches, ensuring consistent behavior at patch boundaries and preserving patch continuity.
+    \item \textbf{Shared decoder across patches:} A single Multi-Layer Perceptron is used to decode features from all patches, ensuring consistent behavior at patch boundaries and preserving patch continuity.
     \item \textbf{Structured coordinate-based interpolation:} Each quadrilateral patch is parametrized over the unit square $[0,1]^2$ using bilinear interpolation, and feature vectors are consistently interpolated across this domain, enabling smooth transitions even in topologically complex meshes.
 \end{itemize}
 
@@ -102,10 +104,10 @@ The flexibility of Neural Geometry Fields is important for data-driven learning 
 In addition to their differentiable structure, NGFs are optimized for real-time performance. 
 Despite being neural representations, they support rapid mesh extraction and lightweight training workflows. 
 Under a full-resolution configuration (2,500 patches with $k=16$ tessellation), NGFs generate a complete mesh in under one second on an NVIDIA RTX 2080 Ti, providing near-instantaneous feedback. 
-Furthermore, the entire model can be trained from scratch in approximately 12 minutes, allowing fast prototyping, retraining, or on-device updates in practical applications (Sivaram et al., 2024). 
+Furthermore, the entire model can be trained from scratch in approximately 12 minutes, allowing fast prototyping, retraining, or on-device updates in practical applications \cite{sivaram2024}. 
 
 NGFs also outperform traditional implicit representations such as signed distance functions in terms of extraction speed. 
-By avoiding computationally expensive procedures like marching cubes or volumetric isosurface tracking \cite{Mildenhall2020}, NGFs achieve 10--100× faster surface extraction rates, making them particularly advantageous in settings that demand high-resolution outputs under real-time constraints. 
+By avoiding computationally expensive procedures like marching cubes or volumetric isosurface tracking \cite{mildenhall2020}, NGFs achieve 10--100x faster surface extraction rates, making them particularly advantageous in settings that demand high-resolution outputs under real-time constraints. 
 
 \subsection{Limitations}
 
@@ -132,7 +134,7 @@ The NGF framework introduces a multi-stage pipeline that combines geometry proce
 While powerful, this increases technical overhead and restricts flexibility in several ways: 
 
 \begin{itemize}
-    \item \textbf{Complex pipeline:} Neural Geometry Fields require mesh simplification, quadrangulation, patch sampling, local coordinate setup, and neural training --- each step demanding careful parameter tuning and often GPU acceleration.
+    \item \textbf{Complex pipeline:} Neural Geometry Fields require mesh simplification, quadrangulation, patch sampling, local coordinate setup, and neural training each step demanding careful parameter tuning and often GPU acceleration.
     \item \textbf{Scene- and domain-specific tuning:} Choices like patch count, feature dimensionality, and decoder architecture influence both convergence and quality, and often require dataset-specific adjustments.
     \item \textbf{Dependence on high-quality quadrangulation:} Base mesh generation must be clean and structured, often requiring manual preprocessing that triangle-based methods like QSlim or Draco avoid.
 \end{itemize}
@@ -146,21 +148,7 @@ However, this flexibility comes with trade-offs:
 
 \begin{itemize}
     \item \textbf{Scalability vs. efficiency:} While increasing patch resolution (e.g., $k = 4 \rightarrow k = 32$) enhances detail, quality gains stagnate around $k = 16$, with higher settings increasing computational and memory costs.
-    \item \textbf{Non-interactive training:} Although NGFs train faster than many implicit models, optimization remains too slow for real-time use. For instance, training 2,500 patches at $k = 16$ takes $\sim$12 minutes on an RTX 2080 Ti --- orders of magnitude slower than traditional simplification tools.
+    \item \textbf{Non-interactive training:} Although NGFs train faster than many implicit models, optimization remains too slow for real-time use. For instance, training 2,500 patches at $k = 16$ takes $\sim$12 minutes on an RTX 2080 Ti orders of magnitude slower than traditional simplification tools.
 \end{itemize}
-
-\begin{table}[h]
-\caption{Resolution vs. Efficiency Trade-offs in NGFs}
-\centering
-\resizebox{\linewidth}{!}{%
-\begin{tabular}{|l|c|c|c|}
-\hline
-\textbf{Patches} & \textbf{Resolution (k)} & \textbf{Extraction Time (ms)} & \textbf{Training Time (min)} \\
-\hline
-2,500 & 16 & 21.22 & $\sim$12 \\
-\hline
-\end{tabular}
-}
-\end{table}
 
 These factors limit NGFs' usability in low-latency or streaming applications, despite their theoretical resolution flexibility. 

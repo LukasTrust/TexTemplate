@@ -141,7 +141,7 @@ The interpolated feature value $\Psi(\mathbf{u})$ for a point $\mathbf{u}$ insid
 The feature field $\Psi: \Sigma \rightarrow \mathbb{R}^F$ (with $F = 20$ in the author’s setup) allows the model to smoothly interpolate semantic information across the surface.  
 These features, interpolated at points on the patch, can be sampled across the surface for later neural processing stages.  
 
-The following section describes how this patch-based representation is used to generate detailed geometry through a neural deformation model, including the role of tessellation, feature encoding and the architecture of the Multilayer Perceptron.  
+The following section describes how this patch-based representation is used to generate detailed geometry through a neural deformation model, including the role of tessellation, feature encoding and the architecture of the Multi-Layer Perceptron.  
 
 % Start of next section
 \subsection{Patch-Based Sampling and Feature Encoding}
@@ -273,7 +273,7 @@ With a structured input representation defined, the next step is to use this dat
 % Start of next subsection
 \subsubsection{Neural Surface Deformation with MLP}
 
-To reconstruct high-fidelity surface geometry, the model employs a neural deformation module based on a multi-layer perceptron (MLP).  
+To reconstruct high-fidelity surface geometry, the model employs a neural deformation module based on a Multi-Layer Perceptron.  
 The MLP receives as input the geometric coordinates of a surface sample along with learned feature embeddings, and predicts fine-grained displacements to locally refine a coarse base mesh.
 
 Formally, the deformed 3D position $\Lambda(\mathbf{u})$ of a point $\mathbf{u}$ is given by:
@@ -401,7 +401,7 @@ This structured triangulation strategy provides an efficient and robust mechanis
 \subsubsection{Inverse Rendering}
 
 To improve reconstructed geometry beyond coarse alignment, NGFs incorporates inverse rendering based on differentiable rasterization.
-Instead of relying solely on geometric losses, such as Chamfer distance or signed distance fields, which are sensitive to noise and sampling density, the method uses appearance-based supervision from multi-view imagery \cite{Hasselgren2021}.
+Instead of relying solely on geometric losses, such as Chamfer distance or signed distance fields, which are sensitive to noise and sampling density, the method uses appearance-based supervision from multi-view imagery~\cite{Hasselgren2021}.
 
 A differentiable rasterizer renders images of the predicted mesh and compares them to ground-truth views.
 The resulting appearance loss propagates gradients through the rendering pipeline, enabling joint optimization of both geometry and appearance.
@@ -409,10 +409,9 @@ This strategy enhances fidelity in complex or partially occluded regions where g
 
 Training follows a coarse-to-fine optimization schedule.
 Starting from a low tessellation level $k$, the model gradually increases sampling density, first capturing global structure, then refining local details.
-At each level, the mesh $M$ has fixed connectivity defined by a regular triangulation of the sampled patch grid \cite{sivaram2024}.
+At each level, the mesh $M$ has fixed connectivity defined by a regular triangulation of the sampled patch grid~\cite{sivaram2024}.
 
 The vertex positions of $M$ are differentiable with respect to:
-
 \begin{itemize}
     \item The patch corner positions $V$,
     \item The per-vertex feature vectors $F$,
@@ -421,3 +420,21 @@ The vertex positions of $M$ are differentiable with respect to:
 
 This full differentiability ensures effective gradient flow throughout the optimization, enabling the network to jointly refine shape and appearance.
 By integrating differentiable rasterization with multi-view consistency, the model achieves reconstructions that are both geometrically accurate and visually coherent across all observed viewpoints.
+
+\begin{table}[h]
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{|l|c|c|c|}
+\toprule
+\textbf{Patches} & \textbf{Resolution ($k$)} & \textbf{Extraction Time (ms)} & \textbf{Training Time (min)} \\
+\midrule
+2,500 & 16 & 21.22 & $\sim$12 \\
+\bottomrule
+\end{tabular}
+}
+\caption{Runtime statistics for NGF training and inference at resolution $k = 16$ using an RTX 2080 Ti GPU.}
+\label{tab:ngf-times}
+\end{table}
+
+Table~\ref{tab:ngf-times} summarizes the runtime performance of the inverse rendering pipeline, highlighting the method's efficiency in both surface extraction and multi-view training.
+Despite the increased complexity of differentiable rendering, the approach remains tractable on commodity hardware.
