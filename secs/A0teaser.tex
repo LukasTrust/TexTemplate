@@ -1,17 +1,17 @@
 \usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, shadows}
 \tikzset{
   base/.style = {
-    draw, thick, minimum height=1.2cm, minimum width=3.4cm,
-    font=\sffamily, text centered, rounded corners=4pt
+    draw, thick, minimum height=1.2cm, minimum width=3.6cm,
+    font=\sffamily, text centered, rounded corners=4pt, drop shadow
   },
   input/.style = {
-    base, fill=blue!10, draw=blue!60, drop shadow
+    base, fill=blue!10, draw=blue!60
   },
   process/.style = {
-    base, fill=green!10, draw=green!50!black, drop shadow
+    base, fill=green!10, draw=green!50!black
   },
   output/.style = {
-    base, fill=red!10, draw=red!60, drop shadow
+    base, fill=red!10, draw=red!60
   },
   arrow/.style = {
     thick, -{Latex[length=3mm]}, line cap=round,
@@ -21,31 +21,30 @@
 
 \centering
 \begin{tikzpicture}[
-  node distance = 2.2cm and 1.6cm,
+  node distance = 1cm and 2.4cm,
   every node/.style = {align=center}
   ]
 
-  % First row
+  % Top row (left to right)
   \node[process] (partition) {Patch\\Partitioning};
-  \node[input, right=of partition] (quadmesh) {Quad Mesh};
+  \node[input, right=of partition] (quadmesh) {Quad Mesh\\Generation};
   \node[input, right=of quadmesh] (featurefield) {Feature Field};
 
-  % Second row
-  \node[input, below=2cm of quadmesh] (sampling) {Sampling};
-  \node[output, right=of sampling] (mlp) {MLP\\Deformation};
-  \node[output, right=of mlp] (render) {Output Mesh};
+  % Bottom row (right to left)
+  \node[input, below=of featurefield] (sampling) {Feature Sampling};
+  \node[output, left=of sampling] (mlp) {MLP-Based\\Deformation};
+  \node[output, left=of mlp] (render) {Final\\Mesh Output};
 
-  % Arrows top row
+  % Arrows (top row)
   \draw[arrow] (partition) -- (quadmesh);
   \draw[arrow] (quadmesh) -- (featurefield);
 
-  % Arrows to second row
-  \draw[arrow] (featurefield.south) -- ++(0,-0.6) -| (sampling.north);
+  % Arrows (down and bottom row leftward)
+  \draw[arrow] (featurefield) -- (sampling);
   \draw[arrow] (sampling) -- (mlp);
   \draw[arrow] (mlp) -- (render);
 
 \end{tikzpicture}
 
-\vspace{-0.5em}
-\captionof{figure}{Schematic of the processing pipeline. The input data undergoes patch partitioning and mesh structuring, followed by feature extraction. These are further processed through sampling and deformation stages to produce the final output mesh.}
+\captionof{figure}{Schematic of the processing pipeline. Patch partitioning and quad mesh generation lead to a feature field construction. The field is sampled, deformed using an MLP, and converted into the final mesh output.}
 \label{fig:teaser}
