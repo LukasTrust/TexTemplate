@@ -1,7 +1,7 @@
 \section{Previous Work}\label{sec:PreviousWork}
 
-The domain of 3D geometry representation has undergone substantial evolution, driven by the ongoing need to balance precision, computational efficiency, and representational flexibility.  
-In the following, we review the principal categories of related work that establish the foundation for Neural Geometry Fields, encompassing traditional mesh-based techniques, neural implicit representations, and recent hybrid approaches.  
+The domain of 3D geometry representation has undergone substantial evolution, driven by the ongoing need to balance precision, computational efficiency and representational flexibility.  
+In the following, we review the principal categories of related work that establish the foundation for Neural Geometry Fields, encompassing traditional mesh-based techniques, neural implicit representations and recent hybrid approaches.  
 
 \subsection{Traditional Mesh-Based Techniques}
 
@@ -15,7 +15,7 @@ In the field of data compression, techniques such as Draco~\cite{sajnani2020} ex
 Nevertheless, these approaches typically entail a trade-off between geometric details and compactness, a compromise that becomes especially important in high-resolution or dynamically changing datasets.  
 
 In addition, surface reconstruction methods, such as Poisson Surface Reconstruction~\cite{kazhdan2006} and the Ball-Pivoting Algorithm~\cite{bernardini1999}, have been widely employed to recover continuous surfaces from unstructured point clouds.  
-While effective under controlled conditions, these algorithms are often sensitive to input noise, require meticulous parameter tuning, and inherently produce triangle meshes with fixed topological properties, limiting their adaptability to complex or highly detailed shapes.  
+While effective under controlled conditions, these algorithms are often sensitive to input noise, require meticulous parameter tuning and inherently produce triangle meshes with fixed topological properties, limiting their adaptability to complex or highly detailed shapes.  
 
 \subsection{Neural Implicit Representations}
 
@@ -36,9 +36,9 @@ This occupancy function is parameterized by a Multi-Layer Perceptron, a type of 
 This continuous probabilistic formulation enables the generation of smooth, high-resolution surfaces without committing to a fixed spatial discretization such as voxels~\cite{mescheder2019}.  
 
 These implicit methods offer several significant advantages.  
-Their continuity and resolution-independence make them particularly well-suited for tasks such as shape interpolation, morphing, and differentiable rendering.  
+Their continuity and resolution-independence make them particularly well-suited for tasks such as shape interpolation, morphing and differentiable rendering.  
 However, as the geometric information is inherently implicit, explicit surface representations must typically be extracted through iso-surface extraction algorithms such as Marching Cubes~\cite{lorensen1987}.  
-This post-processing introduces discretization artifacts, impacts real-time performance, and often struggles to faithfully capture fine-grained structural details or guarantee topological consistency~\cite{sitzmann2020}.  
+This post-processing introduces discretization artifacts, impacts real-time performance and often struggles to faithfully capture fine-grained structural details or guarantee topological consistency~\cite{sitzmann2020}.  
 
 \subsection{Hybrid Approaches and Emerging Techniques}
 

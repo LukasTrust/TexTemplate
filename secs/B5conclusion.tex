@@ -1,13 +1,13 @@
 \section{Conclusion and Future Work}\label{Sec:ConclusionAndFutureWork}
 
 In this paper, we provided a comprehensive overview of Neural Geometry Fields, a hybrid approach that unifies mesh-based representations with neural implicit modeling for high-fidelity and efficient 3D reconstruction.
-By combining quadrilateral patch decomposition, interpolated feature fields, and shared neural deformation modules, NGFs offer a differentiable, compact, and scalable solution for surface reconstruction that significantly improves upon the geometric fidelity and compression efficiency of traditional methods such as QSlim and Draco.
+By combining quadrilateral patch decomposition, interpolated feature fields and shared neural deformation modules, NGFs offer a differentiable, compact and scalable solution for surface reconstruction that significantly improves upon the geometric fidelity and compression efficiency of traditional methods such as QSlim and Draco.
 
 Despite their strengths, NGFs present several challenges.
-The reconstruction quality is highly dependent on the quality and regularity of the patch layout, and visual artifacts may still occur at patch boundaries, particularly under suboptimal supervision or irregular meshing.
-Moreover, the training pipeline introduces considerable complexity, and increasing resolution beyond a certain point leads to diminishing returns while incurring greater computational cost.
+The reconstruction quality is highly dependent on the quality and regularity of the patch layout and visual artifacts may still occur at patch boundaries, particularly under suboptimal supervision or irregular meshing.
+Additionally, the training pipeline is complex and increasing resolution beyond certain limits yields diminishing returns while significantly increasing computational demands.
 
-Future research should explore more robust and adaptive strategies for patch partitioning, ideally informed by local geometry or learned features, to enhance surface fidelity in complex regions.
-Additionally, incorporating seam-aware regularization terms or continuity constraints could further improve the smoothness of transitions across patch boundaries.
-Improving the scalability of the pipeline, including reducing training times and enabling on-device or interactive optimization, remains an important goal for broad practical deployment.
-Finally, extending the NGF framework to dynamic scenes, non-rigid surfaces, and multimodal inputs such as language or images could open new avenues for real-time 3D reconstruction and generative modeling.
+Future research should focus on developing more robust and adaptive patch partitioning strategies, ideally guided by local geometry or learned feature representations, to enhance surface fidelity in complex regions.
+Furthermore, integrating seam-aware regularization or continuity constraints could improve the smoothness of transitions across patch boundaries.
+Enhancing the scalability of the pipeline, by reducing training times and enabling on-device or interactive optimization, remains crucial for widespread practical adoption.
+Finally, extending the NGF framework to dynamic scenes, non-rigid surfaces and multimodal inputs such as language or images could unlock new possibilities for real-time 3D reconstruction and generative modeling.

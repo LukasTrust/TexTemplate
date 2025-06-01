@@ -274,14 +274,14 @@ With a structured input representation defined, the next step is to use this dat
 \subsubsection{Neural Surface Deformation with MLP}
 
 To reconstruct high-fidelity surface geometry, the model employs a neural deformation module based on a Multi-Layer Perceptron.  
-The MLP receives as input the geometric coordinates of a surface sample along with learned feature embeddings, and predicts fine-grained displacements to locally refine a coarse base mesh.
+The MLP receives as input the geometric coordinates of a surface sample along with learned feature embeddings and predicts fine-grained displacements to locally refine a coarse base mesh.
 
 Formally, the deformed 3D position $\Lambda(\mathbf{u})$ of a point $\mathbf{u}$ is given by:
 \begin{equation}
 \Lambda(\mathbf{u}) = \sigma(\mathbf{u}) + \text{MLP}_\theta\left( \text{enc}(\sigma(\mathbf{u}), \Psi(\mathbf{u})) \right)
 \end{equation}
 
-where $\sigma(\mathbf{u})$ is the original 3D coordinate of the point on the base surface, $\Psi(\mathbf{u})$ denotes its corresponding feature vector, and $\text{enc}(\cdot)$ is the encoder that fuses geometric and feature information.  
+where $\sigma(\mathbf{u})$ is the original 3D coordinate of the point on the base surface, $\Psi(\mathbf{u})$ denotes its corresponding feature vector and $\text{enc}(\cdot)$ is the encoder that fuses geometric and feature information.  
 The MLP learns to predict displacements that adjust $\sigma(\mathbf{u})$ to better match the target high-resolution geometry.
 The complete process is illustrated in Figure~\ref{fig:neural_displacement}, which shows how a sampled point $\mathbf{u}_i$ is transformed into a deformed position $\mathbf{x}_i$ through encoding and MLP-based displacement.
 
@@ -392,8 +392,8 @@ This is done by triangulating the regular $k \times k$ sampling grid defined wit
 Each square cell in the grid is consistently split along a diagonal (e.g., from bottom-left to top-right), ensuring uniform triangulation across all patches.
 
 To guarantee global mesh consistency, adjacent patches share boundary vertices and maintain aligned sampling grids.
-This alignment ensures that there are no gaps, cracks, or overlaps at the seams between patches, resulting in a watertight mesh topology \cite{sivaram2024}.
-Watertightness is essential for downstream tasks such as differentiable rendering, physical simulation, and mesh-based editing, where topological correctness directly affects visual and functional quality.
+This alignment ensures that there are no gaps, cracks or overlaps at the seams between patches, resulting in a watertight mesh topology \cite{sivaram2024}.
+Watertightness is essential for downstream tasks such as differentiable rendering, physical simulation and mesh-based editing, where topological correctness directly affects visual and functional quality.
 
 This structured triangulation strategy provides an efficient and robust mechanism for converting locally deformed surface samples into a globally consistent 3D mesh representation.
 
@@ -421,20 +421,7 @@ The vertex positions of $M$ are differentiable with respect to:
 This full differentiability ensures effective gradient flow throughout the optimization, enabling the network to jointly refine shape and appearance.
 By integrating differentiable rasterization with multi-view consistency, the model achieves reconstructions that are both geometrically accurate and visually coherent across all observed viewpoints.
 
-\begin{table}[h]
-\centering
-\resizebox{\linewidth}{!}{%
-\begin{tabular}{|l|c|c|c|}
-\toprule
-\textbf{Patches} & \textbf{Resolution ($k$)} & \textbf{Extraction Time (ms)} & \textbf{Training Time (min)} \\
-\midrule
-2,500 & 16 & 21.22 & $\sim$12 \\
-\bottomrule
-\end{tabular}
-}
-\caption{Runtime statistics for NGF training and inference at resolution $k = 16$ using an RTX 2080 Ti GPU.}
-\label{tab:ngf-times}
-\end{table}
+In practice, the runtime performance of the inverse rendering pipeline is efficient. 
+At a resolu-tion of $k = 16$, training with 2,500 patches requires approximately 12 minutes, and surface extraction takes around 21.22 milliseconds, measured on an RTX 2080 Ti GPU.
 
-Table~\ref{tab:ngf-times} summarizes the runtime performance of the inverse rendering pipeline, highlighting the method's efficiency in both surface extraction and multi-view training.
-Despite the increased complexity of differentiable rendering, the approach remains tractable on commodity hardware.
+These results highlight the tractability of NGF training and inference, even with the added complexity of differentiable rendering, on standard consumer-grade hardware.

@@ -1,25 +1,25 @@
 \section{Introduction}\label{sec:introduction}
 
-Meshes are the standard representation for 3D geometry across a wide range of applications, including computer graphics, video games, CAD (Computer-Aided Design), and scientific visualization.  
-Usually constructed from triangle or quadrilateral elements, meshes provide fine-grained control over surface shape, resolution, and topology.  
+Meshes are the standard representation for 3D geometry across a wide range of applications, including computer graphics, video games, CAD (Computer-Aided Design) and scientific visualization.  
+Usually constructed from triangle or quadrilateral elements, meshes provide fine-grained control over surface shape, resolution and topology.  
 These properties make meshes valuable for applications that require precision in geometric representation.  
-However, traditional approaches to mesh processing such as simplification, compression, and surface reconstruction often involve trade-offs between accuracy, storage efficiency, and processing speed.  
+However, traditional approaches to mesh processing such as simplification, compression and surface reconstruction often involve trade-offs between accuracy, storage efficiency and processing speed.  
 Achieving a practical balance among these factors can be challenging, particularly when working with complex models or in real-time applications where computational resources are limited~\cite{maglo2015}.  
 
-Recently, a new field of research has emerged that explores neural representations for encoding 3D geometry, including signed distance fields (SDFs), occupancy networks, and neural implicit surfaces.  
+Recently, a new field of research has emerged that explores neural representations for encoding 3D geometry, including signed distance fields (SDFs), occupancy networks and neural implicit surfaces.  
 These techniques offer an alternative to classical mesh representations by encoding shapes in a compact, continuous format that avoids the rigid structure of mesh connectivity.  
-This enables smoother interpolation, supports differentiable processing, and can lead to more flexible and efficient 3D pipelines~\cite{park2019}.  
+This enables smoother interpolation, supports differentiable processing and can lead to more flexible and efficient 3D pipelines~\cite{park2019}.  
 Nonetheless, one of the key bottlenecks remains the conversion of these neural representations into usable, topologically consistent meshes.  
-This process is computationally expensive, lossy, and often fails to capture fine geometric details required for high-quality applications~\cite{sivaram2024}.  
+This process is computationally expensive, lossy and often fails to capture fine geometric details required for high-quality applications~\cite{sivaram2024}.  
 
 To address these limitations, the concept of Neural Geometry Fields has been introduced as a hybrid approach that combines the structural clarity of meshes with the flexibility and compactness of neural representations.  
 Rather than treating neural and mesh-based methods as incompatible or sequential, NGFs directly generate mesh geometry from learned neural features.  
 This integration bypasses many of the conversion issues faced by implicit methods and offers a unified, differentiable pipeline for geometry processing.  
-NGFs encompass surface partitioning, patch-based neural deformation, jittered sampling, inverse rendering, and optimization.  
+NGFs encompass surface partitioning, patch-based neural deformation, jittered sampling, inverse rendering and optimization.  
 This results in high-fidelity, topologically consistent meshes efficiently~\cite{sivaram2024}.  
 
 In this paper, we provide a clear and accessible overview of the NGF architecture and its core components, followed by a critical evaluation of its practical capabilities.  
-We demonstrate how NGFs outperform traditional mesh simplification and SDF-based methods in terms of detail preservation, real-time extraction, and scalability, while also identifying their limitations such as sensitivity to patch layout, training complexity, and constrained topological flexibility.  
+We demonstrate how NGFs outperform traditional mesh simplification and SDF-based methods in terms of detail preservation, real-time extraction and scalability, while also identifying their limitations such as sensitivity to patch layout, training complexity and constrained topological flexibility.  
 
 \subsection{Research Question}  
-How do Neural Geometry Fields integrate mesh-based structure and neural flexibility to enable high-fidelity 3D reconstruction, compression, and rendering, and what are their comparative advantages and limitations in modern geometry processing applications?
+How do Neural Geometry Fields integrate mesh-based structure and neural flexibility to enable high-fidelity 3D reconstruction, compression and rendering and what are their comparative advantages and limitations in modern geometry processing applications?
