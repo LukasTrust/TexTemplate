@@ -20,11 +20,11 @@ While effective under controlled conditions, these algorithms are often sensitiv
 \subsection{Neural Implicit Representations}
 
 Recent advances in deep learning have led to the development of neural implicit representations, offering an alternative paradigm to traditional discrete models.  
-Rather than explicitly storing mesh connectivity or surface elements, these approaches encode 3D geometry as continuous functions, typically signed distance fields (SDFs) or occupancy probability fields, which are parameterized by neural networks.  
+Rather than explicitly storing mesh connectivity or surface elements, these approaches encode 3D geometry as continuous functions, typically signed distance fields or occupancy probability fields, which are parameterized by neural networks.  
 
 A pioneering contribution to neural implicit representations is DeepSDF.  
 DeepSDF introduces the concept of learning a continuous shape space, where each distinct 3D object is associated with a compact latent vector.  
-This latent vector, when passed through a neural network decoder, defines a Signed Distance Function (SDF).  
+This latent vector, when passed through a neural network decoder, defines a Signed Distance Function.  
 Which is a continuous function that maps any point in 3D space to a scalar value representing the shortest distance to the object's surface, with the sign indicating whether the point lies inside or outside the surface boundary.  
 By optimizing both the latent codes and the shared network parameters jointly, DeepSDF achieves efficient representation of complex geometric structures while maintaining compactness.  
 This formulation allows smooth interpolation between shapes in the learned latent space and facilitates high-fidelity surface reconstruction through iso-surface extraction~\cite{park2019}.  
@@ -46,4 +46,4 @@ Recognizing the strengths and limitations of explicit and implicit representatio
 
 For instance, Neural Subdivision ~\cite{liu2020} and AtlasNet~\cite{groueix2018} reconstruct 3D geometry using collections of learnable patches or parametric mappings, offering enhanced control over both local surface details and global topology.  
 Building on these ideas, patch-based methods such as PatchNets~\cite{sivaram2024} have been proposed, wherein structured surface primitives, such as quadrilateral patches, are directly predicted from latent neural features.  
-Such approaches aim to alleviate the inefficiencies associated with iso-surface extraction and to produce structured, differentiable representations more directly.  
+Such approaches aim to alleviate the inefficiencies associated with iso-surface extraction and to produce structured, differentiable representations more directly.

@@ -7,7 +7,7 @@ In the second stage, these features, along with the corresponding 3D positions, 
 Applying these displacements to the base mesh produces a deformed triangle mesh.  
 In the final stage, the feature field and mesh parameters are optimized using an inverse rendering approach.  
 
-In the following sections, we explore each stage in greater detail and provide an example to clarify the process further.  
+In the following sections, we explore each stage in greater detail and provide illustrations to clarify the process further.
 
 % Start of next subsection
 \subsection{Surface Partitioning into Patches}
@@ -15,8 +15,8 @@ In the following sections, we explore each stage in greater detail and provide a
 Sivaram and colleagues introduce a method for surface representation by partitioning a base mesh, denoted as $\Sigma$, into quadrilateral patches $\sigma$ (see Figure~\ref{fig:surface_processing_pipeline}).  
 The process begins by simplifying the input mesh using QSlim, a robust and scalable algorithm that preserves important topological features such as holes and intersections.  
 Following simplification, adjacent triangles are greedily merged into near-rectangular quadrilaterals, removing non-manifold triangles in the process.  
-This allows the method to handle non-manifold input surfaces and still produce a consistent quadrilateral patch structure.  
-This produces a compact and regular representation of the surface geometry, with fewer patches and improved structure.  
+
+As a result, the method can handle non-manifold input surfaces while maintaining a consistent quadrilateral patch structure, leading to a compact and regular surface representation with fewer patches and improved organization.
 % Figure 2: Surface Processing Pipeline
 \usetikzlibrary{calc, shapes.geometric, arrows.meta, decorations.pathreplacing, positioning, shapes}
 \begin{figure}[ht]
@@ -105,7 +105,7 @@ This produces a compact and regular representation of the surface geometry, with
     
   \end{tikzpicture}
   \end{adjustbox}
-  \caption{Surface processing pipeline: The irregular triangle mesh is simplified and merged into a quadrilateral mesh $\Sigma$. A quadrilateral patch is extracted, which is then parameterized over the unit square $[0,1]^2$. This parameterization facilitates both geometric and feature field interpolation, with feature values interpolated at the patch's corners and at an arbitrary point u. Inspired by~\cite{sivaram2024}.}
+  \caption{Surface processing pipeline. \textbf{(a)} An irregular triangle mesh in $\mathbb{R}^3$ is simplified and merged. \textbf{(b)} The result is a quadrilateral mesh $\Sigma$. \textbf{(c)} A quadrilateral patch is parameterized over the unit square $[0,1]^2$. \textbf{(d)} This parameterization enables interpolation of geometry and features, using corner values and evaluating at an arbitrary point $\bm{u}$. Inspired by~\cite{sivaram2024}.}
   \label{fig:surface_processing_pipeline}
 \end{figure}
 By relying on quadrilateral patches instead of a fully triangulated mesh, the method reduces the overall patch count $|\mathcal{Q}|$ and simplifies the interpolation domain for later processing.  
@@ -119,9 +119,10 @@ $(0,0) \rightarrow \mathbf{v}_{00},\ (1,0) \rightarrow \mathbf{v}_{10},\ (0,1) \
 To map an arbitrary point $\mathbf{u} = (u_x, u_y)$ within the unit square to its corresponding location on the surface patch $\sigma$, bilinear interpolation is applied:
 \begin{equation}
 \begin{aligned}
-\sigma(\mathbf{u}) &= (1 - u_y) \left[ (1 - u_x)\mathbf{v}_{00} + u_x \mathbf{v}_{10} \right] \\
-&\quad + u_y \left[ (1 - u_x)\mathbf{v}_{01} + u_x \mathbf{v}_{11} \right]
+\sigma(\mathbf{u}) &= (1 - u_y) \left[ (1 - u_x) \cdot \mathbf{v}_{00} + u_x \cdot \mathbf{v}_{10} \right] \\
+&\quad + u_y \left[ (1 - u_x) \cdot \mathbf{v}_{01} + u_x \cdot \mathbf{v}_{11} \right]
 \end{aligned}
+\label{func1}
 \end{equation}
 
 This yields a continuous and smooth surface.  
@@ -133,9 +134,10 @@ In the configuration used by Sivaram et al., each vector has 20 dimensions, acti
 The interpolated feature value $\Psi(\mathbf{u})$ for a point $\mathbf{u}$ inside a patch is computed using bilinear blending:
 \begin{equation}
 \begin{aligned}
-\Psi(\mathbf{u}) &= (1 - u_y) \left[ (1 - u_x)\mathbf{f}_{00} + u_x \mathbf{f}_{10} \right] \\
-&\quad + u_y \left[ (1 - u_x)\mathbf{f}_{01} + u_x \mathbf{f}_{11} \right]
+\Psi(\mathbf{u}) &= (1 - u_y) \left[ (1 - u_x) \cdot \mathbf{f}_{00} + u_x \cdot \mathbf{f}_{10} \right] \\
+&\quad + u_y \left[ (1 - u_x) \cdot \mathbf{f}_{01} + u_x \cdot \mathbf{f}_{11} \right]
 \end{aligned}
+\label{func2}
 \end{equation}
 
 The feature field $\Psi: \Sigma \rightarrow \mathbb{R}^F$ (with $F = 20$ in the author’s setup) allows the model to smoothly interpolate semantic information across the surface.  
@@ -176,71 +178,101 @@ This stochastic sampling approach improves generalization by reducing overfittin
 It promotes smoother deformations and higher robustness, especially in low-resolution areas where uniform sampling may miss details.  
 This process is illustrated in Figure~\ref{fig:jittered-sampling}, showing how jittered sampling enhances geometric flexibility while maintaining continuity constraints.
 
-\begin{figure}
+\usetikzlibrary{arrows.meta, shapes.geometric}
+\begin{figure}[h!]
   \centering
   \begin{adjustbox}{center}
-  \begin{tikzpicture}[scale=0.85, >={Stealth[scale=0.4]}, line width=0.5pt]
+  \begin{tikzpicture}[scale=1, >={Stealth[scale=0.7]}, line width=0.6pt]
 
-  % Left: Original points
-  \begin{scope}[xshift=0cm, yshift=0cm]
-    \draw[blue, thick] (0,0) rectangle (2,2);
-    \filldraw[black] (0,0) circle (1pt);
-    \filldraw[black] (2,0) circle (1pt);
-    \filldraw[black] (0,2) circle (1pt);
-    \filldraw[black] (2,2) circle (1pt);
-    \node at (1,-0.7) {\small \textbf{(a)} Original Sampling};
+  % Parameters
+  \def\gridSize{4} % number of intervals per side
+  \def\patchSize{2} % side length of patch
+  \def\jitterRadius{0.15} % max jitter radius
 
-    % 6 Random original points
-    \filldraw[red] (0.4,1.2) circle (2pt);
-    \filldraw[red] (1.5,1.6) circle (2pt);
-    \filldraw[red] (1.1,0.5) circle (2pt);
-    \filldraw[red] (0.8,0.9) circle (2pt);
-    \filldraw[red] (0.3,0.4) circle (2pt);
-    \filldraw[red] (1.6,0.8) circle (2pt);
+  % Helper: Draw uniform grid points
+  \newcommand{\drawGridPoints}[2]{ % #1 = xshift, #2 = jitter flag (true/false)
+    \foreach \i in {0,...,\gridSize} {
+      \foreach \j in {0,...,\gridSize} {
+        \pgfmathsetmacro{\x}{(\i/\gridSize)*\patchSize}
+        \pgfmathsetmacro{\y}{(\j/\gridSize)*\patchSize}
+        % Boundary detection
+        \ifnum\i=0
+          \def\isBoundary{1}
+        \else
+          \ifnum\i=\gridSize
+            \def\isBoundary{1}
+          \else
+            \ifnum\j=0
+              \def\isBoundary{1}
+            \else
+              \ifnum\j=\gridSize
+                \def\isBoundary{1}
+              \else
+                \def\isBoundary{0}
+              \fi
+            \fi
+          \fi
+        \fi
+
+        % Draw points:
+        \ifthenelse{\equal{#2}{true}}{
+          % Jitter points on right panel only if not boundary
+          \ifnum\isBoundary=0
+            % jitter by random angle and radius inside disk
+            \pgfmathparse{360*random()} \let\angle\pgfmathresult
+            \pgfmathparse{\jitterRadius*sqrt(random())} \let\radius\pgfmathresult
+            \pgfmathsetmacro{\jx}{\radius*cos(\angle)}
+            \pgfmathsetmacro{\jy}{\radius*sin(\angle)}
+
+            % Draw original point in gray
+            \fill[gray] (#1+\x, \y) circle (0.8pt);
+            % Draw jittered point in red
+            \fill[red] (#1+\x+\jx, \y+\jy) circle (1.5pt);
+            % Draw arrow from original to jittered
+            \draw[->, gray] (#1+\x, \y) -- (#1+\x+\jx, \y+\jy);
+          \else
+            % Boundary points: no jitter, blue dots
+            \fill[blue] (#1+\x, \y) circle (1.5pt);
+          \fi
+        }{
+          % Left panel: uniform grid points black or blue for boundary
+          \ifnum\isBoundary=1
+            \fill[blue] (#1+\x, \y) circle (1.5pt);
+          \else
+            \fill[black] (#1+\x, \y) circle (1.5pt);
+          \fi
+        }
+      }
+    }
+  }
+
+  % Left panel: Uniform sampling
+  \begin{scope}[xshift=0cm]
+    \draw[blue, thick] (0,0) rectangle (\patchSize,\patchSize);
+    \drawGridPoints{0}{false}
+    \node at (\patchSize/2,-0.3) {\small \textbf{(a) Uniform Sampling}};
   \end{scope}
 
-  % Arrow to next square
-  \draw[->, thick] (2.6,0.7) -- (5.0,0.7) node[midway, above] {Jitter};
+  % Arrow to right panel
+  \draw[->, thick] (\patchSize+0.3,\patchSize/2) -- (\patchSize+1.7,\patchSize/2) node[midway, above] {Jitter};
 
-  % Right: Jittered points
-  \begin{scope}[xshift=5.5cm, yshift=0cm]
-    \draw[blue, thick] (0,0) rectangle (2,2);
-    \filldraw[black] (0,0) circle (1pt);
-    \filldraw[black] (2,0) circle (1pt);
-    \filldraw[black] (0,2) circle (1pt);
-    \filldraw[black] (2,2) circle (1pt);
-    \node at (1,-0.7) {\small \textbf{(b)} Jittered Sampling};
+  % Right panel: Jittered sampling
+  \begin{scope}[xshift=4cm]
+    \draw[blue, thick] (0,0) rectangle (\patchSize,\patchSize);
+    \drawGridPoints{0}{true}
+    \node at (\patchSize/2,-0.3) {\small \textbf{(b) Jittered Sampling}};
 
-    % Original points in gray
-    \filldraw[gray] (0.4,1.2) circle (2pt);
-    \filldraw[gray] (1.5,1.6) circle (2pt);
-    \filldraw[gray] (1.1,0.5) circle (2pt);
-    \filldraw[gray] (0.8,0.9) circle (2pt);
-    \filldraw[gray] (0.3,0.4) circle (2pt);
-    \filldraw[gray] (1.6,0.8) circle (2pt);
-
-    % Jittered points (stronger jitter)
-    \filldraw[red] (0.55,1.05) circle (2pt);
-    \filldraw[red] (1.68,1.78) circle (2pt);
-    \filldraw[red] (0.95,0.35) circle (2pt);
-    \filldraw[red] (0.65,0.75) circle (2pt);
-    \filldraw[red] (0.45,0.25) circle (2pt);
-    \filldraw[red] (1.78,0.65) circle (2pt);
-
-    % Arrows from gray to red points
-    \draw[->, gray] (0.4,1.2) -- (0.55,1.05);
-    \draw[->, gray] (1.5,1.6) -- (1.68,1.78);
-    \draw[->, gray] (1.1,0.5) -- (0.95,0.35);
-    \draw[->, gray] (0.8,0.9) -- (0.65,0.75);
-    \draw[->, gray] (0.3,0.4) -- (0.45,0.25);
-    \draw[->, gray] (1.6,0.8) -- (1.78,0.65);
+    % Draw jitter radius disk around one interior point (e.g., grid point (2,1))
+    \pgfmathsetmacro{\cx}{(2/\gridSize)*\patchSize}
+    \pgfmathsetmacro{\cy}{(1/\gridSize)*\patchSize}
+    \draw[thick, dashed, orange] (\cx,\cy) circle (\jitterRadius);
+    \node[orange] at (\cx, \cy + \jitterRadius - 0.5) {\scriptsize Jitter radius \(\omega\)};
   \end{scope}
 
-\end{tikzpicture}
-\end{adjustbox}
-
-\caption{Illustration of jittered sampling. (a) shows uniformly sampled interior points; (b) shows the same points after applying disk-shaped jitter. Original points are shown in gray, with arrows indicating their jittered displacement.}
-\label{fig:jittered-sampling}
+  \end{tikzpicture}
+  \end{adjustbox}
+  \caption{Illustration of jittered sampling. (a) Uniform grid samples on a patch with boundary points in blue and interior grid points in black. (b) Points after applying jitter within a disk of radius \(\omega\) (orange dashed circle) around interior points. Boundary points remain blue and are not jittered. Original points before jittering are shown as small gray dots and jittered points are shown in red with arrows indicating displacement vectors.}
+  \label{fig:jittered-sampling}
 \end{figure}
 
 % Start of next subsection
@@ -262,6 +294,7 @@ Specifically, each input point is encoded as:
 \Psi(\mathbf{u})
 \big)
 \end{aligned}
+\label{func3}
 \end{equation}
 
 where \( L \) denotes the number of frequency bands.  
@@ -277,11 +310,11 @@ To reconstruct high-fidelity surface geometry, the model employs a neural deform
 The MLP receives as input the geometric coordinates of a surface sample along with learned feature embeddings and predicts fine-grained displacements to locally refine a coarse base mesh.
 
 Formally, the deformed 3D position $\Lambda(\mathbf{u})$ of a point $\mathbf{u}$ is given by:
-\begin{equation}
+\begin{equation*}
 \Lambda(\mathbf{u}) = \sigma(\mathbf{u}) + \text{MLP}_\theta\left( \text{enc}(\sigma(\mathbf{u}), \Psi(\mathbf{u})) \right)
-\end{equation}
+\end{equation*}
 
-where $\sigma(\mathbf{u})$ is the original 3D coordinate of the point on the base surface, $\Psi(\mathbf{u})$ denotes its corresponding feature vector and $\text{enc}(\cdot)$ is the encoder that fuses geometric and feature information.  
+where $\sigma(\mathbf{u})$ (equation~\ref{func1}) is the jittered 3D coordinate of the point on the base surface, $\Psi(\mathbf{u})$ (equation~\ref{func2}) denotes its corresponding feature vector and $\text{enc}(\cdot)$ (equation~\ref{func3}) is the encoder that fuses geometric and feature information.
 The MLP learns to predict displacements that adjust $\sigma(\mathbf{u})$ to better match the target high-resolution geometry.
 The complete process is illustrated in Figure~\ref{fig:neural_displacement}, which shows how a sampled point $\mathbf{u}_i$ is transformed into a deformed position $\mathbf{x}_i$ through encoding and MLP-based displacement.
 
@@ -340,7 +373,7 @@ The complete process is illustrated in Figure~\ref{fig:neural_displacement}, whi
 
 The MLP is implemented as a feedforward neural network with two hidden layers, each containing 64 units.  
 Although the activation function is not explicitly specified by the original authors, standard choices such as ReLU~\cite{nair2010} or GELU~\cite{hendrycks2023} are likely used to enable the modeling of complex nonlinear deformations.  
-These nonlinearities are essential for capturing intricate surface details beyond what can be represented by linear displacements.
+These nonlinearities are essential for capturing complex surface details beyond what can be represented by linear displacements.
 
 Both the MLP parameters $\theta$ and the per-vertex feature embeddings are optimized jointly during training.  
 The training process is supervised using differentiable rendering, which allows image-space losses to be backpropagated through the rendering pipeline and used to update the 3D geometry.  
@@ -357,9 +390,9 @@ Adam's adaptive learning rates and moment estimation improve convergence speed a
 This MLP-based deformation framework, trained with differentiable rendering and dense multi-view supervision, enables the model to reconstruct fine surface details with strong view consistency and geometric plausibility.
 
 % Start of next subsection
-\subsection{Loss Functions for Deformation Trainin}
+\subsection{Loss Functions for Deformation Training}
 
-With the deformation network in place, the next step is to train it using a combination of geometric and image-based losses that promote accuracy and regularity.
+With the deformation network defined, training proceeds by minimizing a combination of geometric and image-based loss functions designed to enforce both reconstruction fidelity and regularization, as proposed by Sivaram et al.
 
 Unlike traditional pipelines that rely solely on image supervision, this method also utilizes ground truth geometric information, specifically surface normals, as a guiding signal.
 Vertex normals are computed on the predicted mesh using cross products of adjacent triangle edges.
@@ -393,7 +426,7 @@ Each square cell in the grid is consistently split along a diagonal (e.g., from 
 
 To guarantee global mesh consistency, adjacent patches share boundary vertices and maintain aligned sampling grids.
 This alignment ensures that there are no gaps, cracks or overlaps at the seams between patches, resulting in a watertight mesh topology \cite{sivaram2024}.
-Watertightness is essential for downstream tasks such as differentiable rendering, physical simulation and mesh-based editing, where topological correctness directly affects visual and functional quality.
+Watertightness means the mesh forms a continuous, closed surface without holes or gaps. It is essential for downstream tasks such as differentiable rendering, physical simulation and mesh-based editing, where topological correctness directly affects visual and functional quality.
 
 This structured triangulation strategy provides an efficient and robust mechanism for converting locally deformed surface samples into a globally consistent 3D mesh representation.
 
@@ -422,6 +455,6 @@ This full differentiability ensures effective gradient flow throughout the optim
 By integrating differentiable rasterization with multi-view consistency, the model achieves reconstructions that are both geometrically accurate and visually coherent across all observed viewpoints.
 
 In practice, the runtime performance of the inverse rendering pipeline is efficient. 
-At a resolu-tion of $k = 16$, training with 2,500 patches requires approximately 12 minutes, and surface extraction takes around 21.22 milliseconds, measured on an RTX 2080 Ti GPU.
+At a resolution of $k = 16$, training with 2,500 patches requires approximately 12 minutes and surface extraction takes around 21.22 milliseconds, measured on an RTX 2080 Ti GPU.
 
-These results highlight the tractability of NGF training and inference, even with the added complexity of differentiable rendering, on standard consumer-grade hardware.
+These results highlight the controllability of the NGF training and inference, even with the added complexity of differentiable rendering, on standard consumer-grade hardware.
