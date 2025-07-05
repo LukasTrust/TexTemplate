@@ -250,7 +250,7 @@ This process is illustrated in Figure~\ref{fig:jittered-sampling}, showing how j
   \begin{scope}[xshift=0cm]
     \draw[blue, thick] (0,0) rectangle (\patchSize,\patchSize);
     \drawGridPoints{0}{false}
-    \node at (\patchSize/2,-0.3) {\small \textbf{(a) Uniform Sampling}};
+    \node at (\patchSize/2,-0.3) {\small \textbf{(a)} Uniform Sampling};
   \end{scope}
 
   % Arrow to right panel
@@ -260,18 +260,18 @@ This process is illustrated in Figure~\ref{fig:jittered-sampling}, showing how j
   \begin{scope}[xshift=4cm]
     \draw[blue, thick] (0,0) rectangle (\patchSize,\patchSize);
     \drawGridPoints{0}{true}
-    \node at (\patchSize/2,-0.3) {\small \textbf{(b) Jittered Sampling}};
+    \node at (\patchSize/2,-0.3) {\small \textbf{(b)} Jittered Sampling};
 
     % Draw jitter radius disk around one interior point (e.g., grid point (2,1))
     \pgfmathsetmacro{\cx}{(2/\gridSize)*\patchSize}
     \pgfmathsetmacro{\cy}{(1/\gridSize)*\patchSize}
     \draw[thick, dashed, orange] (\cx,\cy) circle (\jitterRadius);
-    \node[orange] at (\cx, \cy + \jitterRadius - 0.5) {\scriptsize Jitter radius \(\omega\)};
+    \node[orange] at (\cx, \cy + \jitterRadius - 0.45) {\scriptsize Jitter radius \(\omega\)};
   \end{scope}
 
   \end{tikzpicture}
   \end{adjustbox}
-  \caption{Illustration of jittered sampling. (a) Uniform grid samples on a patch with boundary points in blue and interior grid points in black. (b) Points after applying jitter within a disk of radius \(\omega\) (orange dashed circle) around interior points. Boundary points remain blue and are not jittered. Original points before jittering are shown as small gray dots and jittered points are shown in red with arrows indicating displacement vectors.}
+  \caption{Illustration of jittered sampling. \textbf{(a)} Uniform grid samples on a patch with boundary points in blue and interior grid points in black. \textbf{(b)} Points after applying jitter within a disk of radius \(\omega\) (orange dashed circle) around interior points. Boundary points remain blue and are not jittered. Original points before jittering are shown as small gray dots and jittered points are shown in red with arrows indicating displacement vectors.}
   \label{fig:jittered-sampling}
 \end{figure}
 
