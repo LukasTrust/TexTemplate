@@ -8,7 +8,7 @@ Together, these insights provide a comprehensive view of the strengths and const
 
 \subsection{Benefits}
 
-The NGF framework a set of design principles that prioritize detail preservation, structural consistency and compatibility with learning-based pipelines. 
+The NGF framework offers a set of design principles that prioritize detail preservation, structural consistency and compatibility with learning-based pipelines. 
 These principles enable it to handle extreme compression, deliver scalable resolution and support differentiable optimization. 
 This subsection outlines the architectural and computational factors that contribute to NGF's effectiveness across geometric reconstruction tasks.
 
@@ -36,7 +36,7 @@ Table~\ref{tab:compression_comparison} compares NGFs with QSlim and Draco on com
 NGFs not only achieve superior compression (up to 50x) but also deliver 2-4x improvements in accuracy: 
 
 \begin{table}[h]
-\caption{Compression vs. reconstruction fidelity. Chamfer Distances are scaled by $10^5$ and normalized by the bounding box diagonal.}
+\caption{Comparison of compression efficiency and reconstruction fidelity across methods. Chamfer Distances are scaled by $10^5$ and normalized by the bounding box diagonal.}
 \centering
 \resizebox{\linewidth}{!}{%
 \begin{tabular}{|l|c|c|c|}
@@ -65,7 +65,7 @@ As shown in Table~\ref{tab:storage_vs_quality}, NGFs with only 2,500 patches ach
 Even at reduced patch counts (e.g., 1,000 patches), NGFs approximate high-resolution surface geometry with a lightweight memory footprint ($<$200 KB), demonstrating superior storage-efficiency trade-offs \cite{sivaram2024} Fig. 9. 
 
 \begin{table}[h]
-\caption{Storage vs. visual quality on the Ganesha model. Inspired by \cite{sivaram2024}, Table 2 and Fig. 7.}
+\caption{Comparison of storage efficiency and visual quality for the Ganesha model. Chamfer distances are scaled by $10^5$ and rendering errors by $10^{-3}$. Based on data from \cite{sivaram2024}, Table 2 and Fig. 7.}
 \centering
 \resizebox{\linewidth}{!}{%
 \begin{tabular}{|l|c|c|c|}
@@ -147,8 +147,8 @@ NGFs offer flexible resolution through per-patch tessellation, allowing fine-gra
 However, this flexibility comes with trade-offs: 
 
 \begin{itemize}
-    \item \textbf{Scalability vs. efficiency:} Increasing the patch resolution (e.g., $k = 4 \rightarrow k = 32$) an enhance surface detail, but quality improvements plateau around $k = 16$. Beyond this point, higher resolutions significantly increase computational and memory costs without noticeable gains in output quality.
-    \item \textbf{Non-interactive training:} Although NGFs train faster than many implicit models, however, optimization remains too slow for real-time use. For instance, training 2,500 patches at $k = 16$ takes $\sim$12 minutes on an RTX 2080 Ti orders of magnitude slower than traditional simplification tools.
+    \item \textbf{Scalability vs. efficiency:} Increasing the patch resolution (e.g., $k = 4 \rightarrow k = 32$) can enhance surface detail, but quality improvements plateau around $k = 16$. Beyond this point, higher resolutions significantly increase computational and memory costs without noticeable gains in output quality.
+    \item \textbf{Non-interactive training:} Although NGFs train faster than many implicit models. However, optimization remains too slow for real-time use. For instance, training 2,500 patches at $k = 16$ takes $\sim$12 minutes on an RTX 2080 Ti orders of magnitude slower than traditional simplification tools.
 \end{itemize}
 
 These factors limit NGFs usability in low-latency or streaming applications, despite their theoretical resolution flexibility. 

@@ -46,5 +46,5 @@
 
 \end{tikzpicture}
 
-\captionof{figure}{Schematic of the processing pipeline. Patch partitioning and quad mesh generation lead to a feature field construction. The field is sampled, deformed using an MLP and converted into the final mesh output.}
+\captionof{figure}{Overview of the NGF processing pipeline. A mesh is partitioned into patches and converted into a quad mesh. Feature vectors are defined over the patches and interpolated across the surface, then sampled and deformed via a shared MLP to produce the final output mesh.}
 \label{fig:teaser}

@@ -2,7 +2,7 @@
 
 The Neural Geometry Fields pipeline, as proposed by Sivaram et al., consists of three main stages.  
 First, a base mesh $\Sigma$ is partitioned into quadrilateral patches, forming a simplified representation of the surface.  
-A learnable feature field $\Psi: \Sigma \rightarrow \mathbb{R}^F$ is then constructed, assigning a vector of $F$ real-valued components to each patch, encoding local surface properties.  
+A learnable feature field $\Psi: \Sigma \rightarrow \mathbf{R}^F$ is then constructed, assigning a vector of $F$ real-valued components to each patch, encoding local surface properties.  
 In the second stage, these features, along with the corresponding 3D positions, are passed to a neural network that predicts displacements for each surface point.  
 Applying these displacements to the base mesh produces a deformed triangle mesh.  
 In the final stage, the feature field and mesh parameters are optimized using an inverse rendering approach.  
@@ -16,7 +16,7 @@ Sivaram and colleagues introduce a method for surface representation by partitio
 The process begins by simplifying the input mesh using QSlim, a robust and scalable algorithm that preserves important topological features such as holes and intersections.  
 Following simplification, adjacent triangles are greedily merged into near-rectangular quadrilaterals, removing non-manifold triangles in the process.  
 
-As a result, the method can handle non-manifold input surfaces while maintaining a consistent quadrilateral patch structure, leading to a compact and regular surface representation with fewer patches and improved organization.
+As a result, it handles non-manifold inputs while maintaining a consistent quadrilateral patch structure, leading to a compact and regular surface representation with fewer patches and improved organization.
 % Figure 2: Surface Processing Pipeline
 \usetikzlibrary{calc, shapes.geometric, arrows.meta, decorations.pathreplacing, positioning, shapes}
 \begin{figure}[ht]
@@ -41,7 +41,7 @@ As a result, the method can handle non-manifold input surfaces while maintaining
       \draw[gray] (C) -- (E) -- (F) -- cycle;
       \draw[gray] (E) -- (G) -- (F) -- cycle;
       \draw[gray] (F) -- (G) -- (H) -- cycle;
-      \node at (1.2, -0.4) {\small \textbf{(a)} Irregular Triangle Mesh in $\mathbb{R}^3$};
+      \node at (1.2, -0.4) {\small \textbf{(a)} Irregular Triangle Mesh in $\mathbf{R}^3$};
     \end{scope}
 
     % === Merge Arrow ===
@@ -62,7 +62,7 @@ As a result, the method can handle non-manifold input surfaces while maintaining
       \draw[blue, thick] (B) -- (E) -- (F) -- (C) -- cycle; % highlighted patch
       \draw[gray] (E) -- (G) -- (H) -- (F) -- cycle;
 
-      \node at (1.2, -0.4) {\small \textbf{(b)} Quad Mesh $\Sigma$ in $\mathbb{R}^3$};
+      \node at (1.2, -0.4) {\small \textbf{(b)} Quad Mesh $\Sigma$ in $\mathbf{R}^3$};
     \end{scope}
 
     % === Down Arrow to Unit Square ===
@@ -105,7 +105,7 @@ As a result, the method can handle non-manifold input surfaces while maintaining
     
   \end{tikzpicture}
   \end{adjustbox}
-  \caption{Surface processing pipeline. \textbf{(a)} An irregular triangle mesh in $\mathbb{R}^3$ is simplified and merged. \textbf{(b)} The result is a quadrilateral mesh $\Sigma$. \textbf{(c)} A quadrilateral patch is parameterized over the unit square $[0,1]^2$. \textbf{(d)} This parameterization enables interpolation of geometry and features, using corner values and evaluating at an arbitrary point $\bm{u}$. Inspired by~\cite{sivaram2024}.}
+  \caption{Surface processing pipeline. \textbf{(a)} An irregular triangle mesh in $\mathbf{R}^3$ is simplified and merged. \textbf{(b)} The result is a quadrilateral mesh $\Sigma$. \textbf{(c)} A quadrilateral patch is parameterized over the unit square $[0,1]^2$. \textbf{(d)} This parameterization enables interpolation of geometry and features, using corner values and evaluating at an arbitrary point $\mathbf{u}$. Inspired by~\cite{sivaram2024}.}
   \label{fig:surface_processing_pipeline}
 \end{figure}
 By relying on quadrilateral patches instead of a fully triangulated mesh, the method reduces the overall patch count $|\mathcal{Q}|$ and simplifies the interpolation domain for later processing.  
@@ -140,7 +140,7 @@ The interpolated feature value $\Psi(\mathbf{u})$ for a point $\mathbf{u}$ insid
 \label{func2}
 \end{equation}
 
-The feature field $\Psi: \Sigma \rightarrow \mathbb{R}^F$ (with $F = 20$ in the author’s setup) allows the model to smoothly interpolate semantic information across the surface.  
+The feature field $\Psi: \Sigma \rightarrow \mathbf{R}^F$ (with $F = 20$ in the author's setup) allows the model to smoothly interpolate semantic information across the surface.  
 These features, interpolated at points on the patch, can be sampled across the surface for later neural processing stages.  
 
 The following section describes how this patch-based representation is used to generate detailed geometry through a neural deformation model, including the role of tessellation, feature encoding and the architecture of the Multi-Layer Perceptron.  
@@ -380,7 +380,7 @@ The training process is supervised using differentiable rendering, which allows 
 The method leverages \textsc{NVDIFFRAST}~\cite{laine2020}, a GPU-accelerated differentiable rasterizer that supports rendering triangle meshes while computing gradients with respect to vertex positions and attributes.
 
 To provide rich and diverse supervision, each 3D object is rendered from 200 virtual viewpoints, evenly sampled on a sphere surrounding the object.  
-Rendering is performed using multi-layer depth buffers, where each pixel can record information for up to three surfaces along a viewing ray.  
+Rendering is performed using multi-layer depth buffers, where each pixel records up to three surface intersections along its viewing ray.
 This strategy enables accurate modeling of occlusions and semi-transparent regions.  
 To maintain computational efficiency and manage GPU memory, viewpoints are processed in batches of 10.
 

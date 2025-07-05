@@ -25,7 +25,7 @@ Rather than explicitly storing mesh connectivity or surface elements, these appr
 A pioneering contribution to neural implicit representations is DeepSDF.  
 DeepSDF introduces the concept of learning a continuous shape space, where each distinct 3D object is associated with a compact latent vector.  
 This latent vector, when passed through a neural network decoder, defines a Signed Distance Function.  
-Which is a continuous function that maps any point in 3D space to a scalar value representing the shortest distance to the object's surface, with the sign indicating whether the point lies inside or outside the surface boundary.  
+This function maps any point in 3D space to a scalar value representing the shortest distance to the object's surface, with the sign indicating whether the point lies inside or outside the surface boundary.  
 By optimizing both the latent codes and the shared network parameters jointly, DeepSDF achieves efficient representation of complex geometric structures while maintaining compactness.  
 This formulation allows smooth interpolation between shapes in the learned latent space and facilitates high-fidelity surface reconstruction through iso-surface extraction~\cite{park2019}.  
 
