@@ -4,20 +4,20 @@
 
 %\documentclass[ngerman, praxis]{template/feif}  % For a German Internship Report ("Praxisbericht").
 %\documentclass[praxis]{template/feif}           % For an English Internship Report ("Praxisbericht").
-%\documentclass[ngerman]{template/feif}          % For a German thesis (Bachelorarbeit, Masterarbeit, Seminararbeit, ...)
-\documentclass[praxis]{template/feif}                   % For an English thesis (Bachelorarbeit, Masterarbeit, Seminararbeit, ...)
+\documentclass[ngerman]{template/feif}          % For a German thesis (Bachelorarbeit, Masterarbeit, Seminararbeit, ...)
+%\documentclass[praxis]{template/feif}                   % For an English thesis (Bachelorarbeit, Masterarbeit, Seminararbeit, ...)
 \input{common/packages.tex}
 \input{common/commands.tex}
 
 % Data of your document (thesis, paper, or intership report)
-\def\FEIFTitle{Vorlage für FEIF Arbeiten}       % Title of your thesis or internship report
-\def\FEIFAuthorsName{<NACHNAME, VORNAME>}       % Author's, i.e., student's, name.
-\def\FEIFDateOfBirth{<GEBURTSDATUM>}            % Date of birth. Use the German DD.MM.YYYY format.
+\def\FEIFTitle{Exposé Masterarbeit}       % Title of your thesis or internship report
+\def\FEIFAuthorsName{Scheler, Lukas}       % Author's, i.e., student's, name.
+\def\FEIFDateOfBirth{22.06.2000}            % Date of birth. Use the German DD.MM.YYYY format.
 \def\FEIFMatriculationNumber{<MATRIKELNUMMER>}  % Your Matriculation number
-\def\FEIFStudyProgram{<STUDIENGANG>}            % The German version of your degree Program, e.g. Visual Computing, B.Sc. or Informatik, M.Sc.
-\def\FEIFAuthorCity{<ORT>}                      % The place where you sign the Declaration of Honor.
-\def\FEIFBeginDate{<BEGINN>}                    % Beginning of your thesis or start of your internship
-\def\FEIFEndDate{<ENDE>}                        % Last day of your thesis or last day of your internship.
+\def\FEIFStudyProgram{Data Science}            % The German version of your degree Program, e.g. Visual Computing, B.Sc. or Informatik, M.Sc.
+\def\FEIFAuthorCity{Rödental}                      % The place where you sign the Declaration of Honor.
+\def\FEIFBeginDate{04.03.2026}                    % Beginning of your thesis or start of your internship
+\def\FEIFEndDate{04.03.2026}                        % Last day of your thesis or last day of your internship.
 \def\FEIFSubmissionDate{\today}                 % The submission date of your docuemtn
 
 % Data required for thesis and seminar papers
@@ -25,7 +25,7 @@
 % Use one thesis type:
 %\def\ThesisType{Seminararbeit}
 %\def\ThesisType{Bachelorarbeit}
-\def\ThesisType{Masterarbeit}
+\def\FEIFThesisType{Masterarbeit}
 %\def\ThesisType{Bachelor Thesis}
 %\def\ThesisType{Master Thesis}
 %\def\ThesisType{Seminar Paper}
@@ -58,14 +58,14 @@
 % Optional notice to the reader ("Vermerk")
 \IfExists{./secs/Z0vermerk.tex}{\thispagestyle{empty}\input{secs/Z0vermerk}}
 
-\begin{abstract}
-    \input{./secs/A0abstract}
-\end{abstract}
+%\begin{abstract}
+%    \input{./secs/A0abstract}
+%\end{abstract}
 \tableofcontents  
 \listoffigures
 \listoftables
-\lstlistoflistings
-\listofsymbols
+%\lstlistoflistings
+%\listofsymbols
 \listofacronyms  
 \mainmatter
 \input{secs/structure.tex}
@@ -74,5 +74,5 @@
 \printfeifglossary   
 \printfeifbibliography
 \bibliography{common/bibliography}
-\MakeDeclarationOfHonor
+%\MakeDeclarationOfHonor
 \end{document}

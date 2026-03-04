@@ -1,22 +1,271 @@
-\section{Introduction}\label{sec:introduction}
+\section{Arbeitstitel}\label{sec:introduction}
 
-Meshes are the standard representation for 3D geometry across a wide range of applications, including computer graphics, video games, Computer-Aided Design (CAD) and scientific visualization.  
-Usually constructed from triangle or quadrilateral elements, meshes provide fine-grained control over surface shape, resolution and topology.  
-These properties make meshes ideal for applications requiring geometric precision.
-However, traditional approaches to mesh processing such as simplification, compression and surface reconstruction often involve trade-offs between accuracy, storage efficiency and processing speed.  
-Achieving a practical balance among these factors can be challenging, particularly when working with complex models or in real-time applications where computational resources are limited~\cite{maglo2015}.  
+Multi-Agent-basierte Qualitätskontrolle in CI-Pipelines -- Konzeption, Implementierung und Evaluation einer autonomen Review-Architektur im Unternehmenskontext
 
-Recently, a new field of research has emerged that explores neural representations for encoding 3D geometry, including signed distance fields (SDFs), occupancy networks and neural implicit surfaces.  
-These techniques offer an alternative to classical mesh representations by encoding shapes in a compact, continuous format that avoids the rigid structure of mesh connectivity.  
-This enables smoother interpolation, supports differentiable processing and can lead to more flexible and efficient 3D pipelines~\cite{park2019}.  
-Nonetheless, one of the key bottlenecks remains the conversion of these neural representations into usable, topologically consistent meshes.  
-This process is computationally expensive, lossy and often fails to capture fine geometric details required for high-quality applications~\cite{sivaram2024}.  
 
-To address these limitations, the concept of Neural Geometry Fields has been introduced as a hybrid approach that combines the structural clarity of meshes with the flexibility and compactness of neural representations.  
-Rather than treating neural and mesh-based methods as incompatible or sequential, NGFs directly generate mesh geometry from learned neural features.  
-This integration bypasses many of the conversion issues faced by implicit methods and offers a unified, differentiable pipeline for geometry processing.  
-NGFs encompass surface partitioning, patch-based neural deformation, jittered sampling, inverse rendering and optimization.  
-This results in high-fidelity, topologically consistent meshes efficiently~\cite{sivaram2024}.  
 
-In this paper, we provide a clear and accessible overview of the NGF architecture and its core components, followed by a critical evaluation of its practical capabilities.  
-We demonstrate how NGFs outperform traditional mesh simplification and SDF-based methods in terms of detail preservation, real-time extraction and scalability, while also identifying their limitations such as sensitivity to patch layout, training complexity and constrained topological flexibility.  
+
+
+\subsection{Problemstellung und Motivation}
+
+Die Qualitätssicherung in der Softwareentwicklung stellt seit jeher eine zentrale, jedoch bis heute nicht vollständig gelöste Herausforderung dar. Obwohl moderne Entwicklungsprozesse durch Continuous Integration (CI) und agile Methoden beschleunigt wurden, bleibt die Sicherstellung hoher Codequalität ein kosten- und zeitintensiver Bestandteil des Softwareentwicklungszyklus.
+
+Insbesondere im Kontext CI-basierter Merge-Request-Workflows entstehen erhebliche Aufwände durch:
+\begin{itemize}
+	\item Manuelle Code-Reviews
+	\item Überprüfung projekt- oder unternehmensspezifischer Coding-Standards
+	\item Bewertung der Erfüllung fachlicher Anforderungen in der Codeumsetzung
+	\item Analyse und Sicherstellung ausreichender Testabdeckung
+	\item Erstellung oder Anpassung automatisierter Tests
+	\item Überprüfung sicherheitsrelevanter Aspekte des Codes
+\end{itemize}
+
+Fehler in diesen Prozessen können erhebliche Folgekosten verursachen. Werden Defekte erst in späteren Phasen -- beispielsweise während manueller Tests -- erkannt, muss der Entwicklungsprozess erneut durchlaufen werden: Anpassung des Codes, erneute Reviews, erneute Testzyklen. Dies verlängert die Entwicklungszeit und bindet zusätzliche Ressourcen.
+
+Noch gravierendere Auswirkungen entstehen, wenn Defekte erst im Produktivbetrieb identifiziert werden. Abhängig von Anwendungskontext und Kritikalität können daraus resultieren:
+\begin{itemize}
+	\item Rollbacks oder Zurücksetzen von Codeänderungen in der Produktivumgebung
+	\item Zusätzlicher Entwicklungs- und Testaufwand
+	\item Systemausfälle (Downtimes) mit potenziellem Kundenverlust
+	\item Reputationsschäden
+	\item Rechtliche Konsequenzen, insbesondere in stark regulierten Bereichen
+	\item Gefährdung der menschlichen Unversehrtheit bzw. des Lebens
+\end{itemize}
+
+In vielen Projekten nimmt die Qualitätssicherung, einschließlich Testaktivitäten, daher bereits einen größeren Anteil der Entwicklungszeit ein als die eigentliche Implementierung neuer Funktionalität. Vor diesem Hintergrund besteht ein erhebliches Interesse daran, diesen Prozess effizienter, skalierbarer und weniger fehleranfällig zu gestalten.
+
+Mit dem Aufkommen leistungsfähiger Large Language Models (LLMs) und KI-basierter Agentensysteme eröffnen sich neue Möglichkeiten zur teil- oder vollautomatisierten Unterstützung der Qualitätskontrolle. Insbesondere Multi-Agent-Architekturen erscheinen vielversprechend, da sie spezialisierte Agenten ermöglichen, die jeweils dedizierte Aspekte der Qualitätssicherung übernehmen. Beispiele hierfür sind:
+\begin{itemize}
+	\item Prüfung von Coding-Standards
+	\item Analyse technischer Korrektheit
+	\item Bewertung der Testabdeckung
+	\item Abgleich fachlicher Anforderungen anhand von Tickets
+\end{itemize}
+
+Solche Agenten bieten die Möglichkeit, direkt in CI-Pipelines integriert zu werden: Sie können automatisiert Codeänderungen analysieren, Verbesserungsvorschläge generieren und diese strukturiert in den Entwicklungsprozess zurückführen.
+
+Gleichzeitig handelt es sich um ein noch junges und dynamisches Forschungs- und Anwendungsfeld mit zahlreichen offenen Fragestellungen:
+\begin{itemize}
+	\item Wie sollte eine Multi-Agent-Architektur strukturiert sein, um unterschiedliche Qualitätsdimensionen effektiv abzudecken?
+	\item Wie lässt sich eine solche Architektur in bestehende CI-Umgebungen integrieren?
+	\item Wie können Governance, Nachvollziehbarkeit und Zugriffskontrolle gewährleistet werden?
+	\item Wie hoch ist die Akzeptanz von KI-generierten Änderungsvorschlägen im Entwicklerteam?
+	\item Verbessert sich die Codequalität messbar?
+	\item Wie gestaltet sich die Kostenstruktur, insbesondere im Hinblick auf Tokenverbrauch und Infrastrukturaufwand?
+\end{itemize}
+
+Diese Arbeit adressiert diese Fragestellungen im konkreten Unternehmenskontext und untersucht, inwiefern eine Multi-Agent-basierte Architektur zur automatisierten Qualitätskontrolle einen praktikablen und wirtschaftlich sinnvollen Beitrag zur Verbesserung von CI-gestützten Entwicklungsprozessen leisten kann.
+
+
+
+
+
+\subsection{Zielsetzung der Arbeit}
+
+Ziel dieser Arbeit ist die Konzeption, Implementierung und Evaluation einer Multi-Agenten-Architektur zur automatisierten Qualitätskontrolle innerhalb einer bestehenden CI-Pipeline.
+
+Die entwickelte Architektur soll:
+\begin{itemize}
+	\item in eine bestehende CI-Umgebung (z. B. GitLab) integriert werden,
+	\item einen systematischen Vergleich zwischen einem Single-Agent-Ansatz und einer spezialisierten Multi-Agenten-Architektur ermöglichen,
+	\item Änderungsvorschläge automatisiert in separaten Branches erzeugen und als Merge Requests einbringen,
+	\item definierte Governance- und Sicherheitsanforderungen erfüllen,
+	\item rekursive Pipeline-Ausführungen technisch verhindern,
+	\item sowie messbare Verbesserungen hinsichtlich Codequalität und Prozessstabilität erzielen.
+\end{itemize}
+
+Darüber hinaus soll untersucht werden, ob sich durch den Einsatz eines solchen Systems der manuelle Review-Aufwand reduzieren lässt, ohne dabei Qualitätsverluste oder zusätzliche Risiken zu erzeugen.
+
+
+
+
+
+\subsection{Forschungsfrage}
+
+\subsubsection{Zentrale Forschungsfrage}
+
+Wie kann eine Multi-Agenten-Architektur zur automatisierten Qualitätskontrolle in eine bestehende CI-Pipeline integriert werden, sodass die Codequalität messbar verbessert wird, ohne Governance-, Akzeptanz- oder Rekursionsprobleme zu erzeugen?
+
+\subsubsection{Teilforschungsfragen}
+
+\begin{itemize}
+	\item Erzielt eine Multi-Agenten-Architektur bessere Ergebnisse in der Qualitätsbewertung als ein Single-Agent-Ansatz?
+	\item Wie kann ein Master-Agent spezialisierte Sub-Agenten kontextabhängig orchestrieren?
+	\item Welche technischen Mechanismen sind erforderlich, um rekursive Pipeline-Ausführungen zuverlässig zu verhindern?
+	\item Wie werden automatisiert generierte Merge Requests von Entwicklerinnen und Entwicklern akzeptiert?
+	\item Welche Auswirkungen ergeben sich auf Codequalität, Entwicklungsaufwand und Kostenstruktur?
+\end{itemize}
+
+
+
+
+
+\subsection{Stand der Technik}
+
+Die Arbeit stützt sich auf folgende technologische und konzeptionelle Grundlagen:
+
+\begin{itemize}
+	\item Continuous Integration sowie Merge-Request-basierte Entwicklungsprozesse,
+	\item agentenbasierte Systeme (z. B. OpenCode),
+	\item Large Language Models (z. B. über AWS Bedrock),
+	\item automatisierte Code-Analyse und Testabdeckungsmessung (z. B. JaCoCo),
+	\item DevOps-Plattformen wie GitLab,
+	\item sowie perspektivisch KI-gestützte Entwicklungswerkzeuge wie GitLab Duo.
+\end{itemize}
+
+Zudem werden aktuelle regulatorische Rahmenbedingungen, insbesondere der EU AI Act, berücksichtigt.
+
+\section{Konzeption der Agentenarchitektur}
+
+Dieses Kapitel beschreibt die konzeptionelle Ausgestaltung der untersuchten Agentensysteme. Ziel ist es, sowohl einen Single-Agent-Ansatz als auch eine Multi-Agenten-Architektur zu definieren, um einen strukturierten Vergleich im Rahmen der Evaluation zu ermöglichen.
+
+
+
+
+
+\subsection{Single-Agent-Ansatz}
+
+Im Single-Agent-Ansatz übernimmt ein einzelner KI-Agent sämtliche Aufgaben der Qualitätskontrolle innerhalb eines Merge-Request-Prozesses. Der Agent erhält als Eingabe:
+
+\begin{itemize}
+	\item den Git-Diff der Merge Request,
+	\item Metadaten der Merge Request,
+	\item gegebenenfalls Testabdeckungsberichte,
+	\item sowie referenzierte Ticketinformationen.
+\end{itemize}
+
+Der Agent analysiert diese Informationen ganzheitlich und generiert strukturierte Verbesserungsvorschläge. Optional kann er Änderungen automatisiert in einem separaten Branch einbringen und eine Merge Request erzeugen.
+
+Charakteristika des Single-Agent-Ansatzes:
+
+\begin{itemize}
+	\item zentrale Entscheidungslogik,
+	\item keine funktionale Trennung zwischen Qualitätsdimensionen,
+	\item geringerer Orchestrierungsaufwand,
+	\item potenziell schlechtere Ergebnisse aufgrund von Kontext kapazitäten
+    \item potenziell kostenersparniss druch weniger run-time.
+\end{itemize}
+
+
+
+
+
+\subsection{Multi-Agenten-Architektur}
+
+Die Multi-Agenten-Architektur folgt einem modularen Ansatz mit funktionaler Spezialisierung. Ein Master-Agent übernimmt die Orchestrierung und aktiviert kontextabhängig spezialisierte Sub-Agenten.
+
+\subsubsection{Master-Agent}
+
+Der Master-Agent übernimmt folgende Aufgaben:
+
+\begin{itemize}
+	\item Analyse des Git-Diffs,
+	\item Klassifikation der Änderung (z. B. Feature, Refactoring, Bugfix),
+	\item Entscheidung über die Aktivierung relevanter Sub-Agenten,
+	\item Erstellung eines dedizierten Review-Branches,
+    \item Review des dedizierten Review-Branches und löschung bei Irellevanz
+	\item Aggregation und Koordination der Sub-Agent-Ergebnisse.
+\end{itemize}
+
+\subsubsection{Spezialisierte Sub-Agenten}
+
+Die Sub-Agenten sind auf einzelne Qualitätsdimensionen spezialisiert:
+
+\begin{itemize}
+	\item Coding-Standards-Agent,
+	\item Korrektheits-Agent,
+	\item Testabdeckungs-Agent,
+	\item Fachlichkeits-Agent (unter Einbezug von Ticketinformationen).
+\end{itemize}
+
+Jeder Sub-Agent analysiert ausschließlich seine definierte Qualitätsdimension und bringt gegebenenfalls Änderungsvorschläge in den dedizierten Review-Branch ein.
+
+
+
+
+
+\subsection{Vergleichsdesign}
+
+Zur systematischen Evaluation werden beide Architekturen unter identischen Rahmenbedingungen betrieben. Dabei werden folgende Vergleichsdimensionen betrachtet:
+
+\begin{itemize}
+	\item Qualität der generierten Verbesserungsvorschläge,
+	\item Akzeptanzrate der Merge Requests,
+	\item Veränderung der Testabdeckung,
+	\item Laufzeit und Ressourcenverbrauch,
+	\item Tokenverbrauch und Kostenstruktur.
+\end{itemize}
+
+\section{Implementierung und Integrationskonzept}
+
+Dieses Kapitel beschreibt die technische Integration der Agentensysteme in die bestehende CI-Pipeline sowie das Evaluationsdesign zur vergleichenden Untersuchung.
+
+
+
+
+
+\subsection{Integration in die CI-Pipeline}
+
+Die Implementierung erfolgt innerhalb einer bestehenden GitLab-basierten CI-Umgebung. Beide Architekturen werden als dedizierte Pipeline-Stages implementiert.
+
+Die Integration umfasst:
+
+\begin{itemize}
+	\item Trigger bei Erstellung oder Aktualisierung einer Merge Request,
+	\item Extraktion des Git-Diffs,
+	\item Bereitstellung relevanter Metadaten,
+	\item Ausführung des jeweiligen Agentensystems,
+	\item optionales Erstellen eines Review-Branches,
+	\item automatisiertes Anlegen einer Merge Request.
+\end{itemize}
+
+
+
+
+
+\subsection{Rekursionskontrolle}
+
+Zur Vermeidung rekursiver Pipeline-Ausführungen werden technische Schutzmechanismen implementiert, darunter:
+
+\begin{itemize}
+	\item dedizierte Branch-Namenskonventionen (z.\,B. \texttt{ai-review/*}),
+	\item Kennzeichnung AI-generierter Merge Requests mittels Labels,
+	\item Pipeline-Regeln zur Filterung von Bot-generierten Commits.
+\end{itemize}
+
+
+
+
+
+\subsection{Governance- und Sicherheitskonzept}
+
+Die Agenten erhalten ausschließlich definierte Zugriffstoken mit eingeschränkten Berechtigungen. 
+
+Es werden folgende Maßnahmen umgesetzt:
+
+\begin{itemize}
+	\item Schutz kritischer Branches (Zugriff nur auf \texttt{ai-review/*} für Commits),
+	\item Protokollierung aller Agentenaktionen / Tokenverbrauch,
+	\item Begrenzung des Repository-Zugriffs auf notwendige Pfade,
+	\item Kontrolle externer API-Zugriffe.
+\end{itemize}
+
+
+
+
+
+\subsection{Evaluationsaufbau}
+
+Zur vergleichenden Analyse von Single- und Multi-Agenten-Architektur wird ein kontrolliertes Untersuchungsdesign gewählt.
+
+Messgrößen umfassen:
+
+\begin{itemize}
+	\item Anzahl und Art generierter Verbesserungsvorschläge,
+	\item Akzeptanzrate der AI-generierten Merge Requests,
+	\item Veränderung der Testabdeckung,
+	\item Dauer der Review-Prozesse,
+	\item Tokenverbrauch und infrastrukturelle Kosten.
+\end{itemize}
+
+Zusätzlich werden qualitative Daten durch Entwicklerbefragungen erhoben, um Aspekte wie Vertrauen, Transparenz und wahrgenommene Qualität zu analysieren.
